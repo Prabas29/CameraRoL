@@ -14,6 +14,10 @@ export function filteredPath(eventId: string, photoId: string) {
   return `${eventId}/filtered/${photoId}.jpg`
 }
 
+export function thumbPath(eventId: string, photoId: string) {
+  return `${eventId}/thumb/${photoId}.jpg`
+}
+
 /**
  * Menukar path storage jadi signed URL.
  *

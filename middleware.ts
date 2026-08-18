@@ -7,10 +7,17 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: [
-    /*
-     * Semua path kecuali aset statis dan file gambar.
-     */
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
-  ],
+  /*
+   * Hanya rute yang memang punya sesi host.
+   *
+   * Sebelumnya matcher-nya mencakup hampir semua path, sehingga SETIAP request
+   * tamu — halaman join, kamera, upload foto — ikut memanggil
+   * supabase.auth.getUser(). Itu satu round-trip jaringan ke Supabase demi
+   * memastikan sesuatu yang sudah pasti: tamu tidak pernah punya sesi Supabase.
+   *
+   * Membatasi ke /dashboard dan /login menghapus round-trip itu dari seluruh
+   * jalur tamu, tanpa mengurangi penjagaan apa pun — /dashboard tetap dijaga,
+   * dan token host tetap disegarkan setiap kali ia membuka dashboard.
+   */
+  matcher: ['/dashboard/:path*', '/login'],
 }

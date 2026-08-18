@@ -58,10 +58,11 @@ export function HostPhotoGrid({
           <figure key={photo.id} className="group relative overflow-hidden rounded-lg border">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src={photo.url}
+              src={photo.thumbUrl}
               alt={`Foto oleh ${photo.guestName}`}
               className="aspect-square w-full object-cover"
               loading="lazy"
+              decoding="async"
             />
 
             <figcaption className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent px-2 pb-2 pt-6 text-xs text-white">

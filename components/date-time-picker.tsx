@@ -3,10 +3,10 @@
 import { format } from 'date-fns'
 import { id as localeId } from 'date-fns/locale'
 import { CalendarIcon, ClockIcon } from 'lucide-react'
+import dynamic from 'next/dynamic'
 import { useState } from 'react'
 
 import { Button } from '@/components/ui/button'
-import { Calendar } from '@/components/ui/calendar'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import {
   Select,
@@ -25,6 +25,25 @@ const HOURS = Array.from({ length: 24 }, (_, index) => index)
 const MINUTES = Array.from({ length: 60 }, (_, index) => index)
 
 const pad = (value: number) => String(value).padStart(2, '0')
+
+/**
+ * Kalender dimuat terpisah, bukan ikut bundel awal halaman.
+ *
+ * react-day-picker + date-fns berbobot ~50 kB, padahal isinya baru terlihat
+ * setelah host membuka popover. PopoverContent milik Radix memang tidak
+ * di-mount sampai terbuka, jadi chunk-nya baru diambil tepat saat dibutuhkan.
+ */
+const Calendar = dynamic(
+  () => import('@/components/ui/calendar').then((mod) => mod.Calendar),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex h-64 w-64 items-center justify-center text-sm text-muted-foreground">
+        Memuat kalender…
+      </div>
+    ),
+  },
+)
 
 /** Menggabungkan tanggal dari kalender dengan jam & menit dari time picker. */
 function withTime(day: Date, hours: number, minutes: number): Date {

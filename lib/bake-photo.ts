@@ -5,14 +5,29 @@ import type { FilmStyleDef } from '@/lib/film-styles'
 /** Sisi terpanjang foto hasil. Cukup tajam untuk dicetak kecil, ringan diunggah. */
 const MAX_EDGE = 1600
 const JPEG_QUALITY = 0.9
+
+/**
+ * Thumbnail untuk grid gallery. Petak di grid tidak pernah lebih lebar dari
+ * ~300 px, jadi 480 px masih tajam di layar retina sekalipun. Kualitas boleh
+ * lebih rendah karena file ini tidak pernah dilihat besar-besar — lightbox dan
+ * unduhan tetap memakai versi penuh.
+ */
+const THUMB_EDGE = 480
+const THUMB_QUALITY = 0.72
+
 const GRAIN_TILE = 128
 
 export interface CapturedPhoto {
   /** Frame mentah tanpa filter — arsip untuk render ulang di kemudian hari. */
   original: Blob
-  /** Frame yang filternya sudah di-bake — yang tampil di gallery. */
+  /** Frame yang filternya sudah di-bake — dipakai lightbox & unduhan. */
   filtered: Blob
-  /** Data URL versi filtered, untuk umpan balik langsung di layar. */
+  /** Versi kecil dari `filtered`, khusus grid gallery. */
+  thumbnail: Blob
+  /**
+   * Object URL dari thumbnail, untuk umpan balik langsung di layar.
+   * Pemanggil bertanggung jawab memanggil URL.revokeObjectURL() setelah selesai.
+   */
   previewUrl: string
 }
 
@@ -104,14 +119,34 @@ function drawVignette(
   context.restore()
 }
 
-function toBlob(canvas: HTMLCanvasElement): Promise<Blob> {
+function toBlob(canvas: HTMLCanvasElement, quality: number = JPEG_QUALITY): Promise<Blob> {
   return new Promise((resolve, reject) => {
     canvas.toBlob(
       (blob) => (blob ? resolve(blob) : reject(new Error('Gagal mengubah foto jadi file.'))),
       'image/jpeg',
-      JPEG_QUALITY,
+      quality,
     )
   })
+}
+
+/**
+ * Mengecilkan hasil bake jadi thumbnail.
+ *
+ * Sumbernya canvas yang filternya sudah diterapkan, bukan video mentah, supaya
+ * thumbnail dan versi penuh benar-benar memperlihatkan look yang sama.
+ */
+function makeThumbnail(source: HTMLCanvasElement): HTMLCanvasElement {
+  const scale = Math.min(1, THUMB_EDGE / Math.max(source.width, source.height))
+  const thumb = document.createElement('canvas')
+  thumb.width = Math.max(1, Math.round(source.width * scale))
+  thumb.height = Math.max(1, Math.round(source.height * scale))
+
+  const context = thumb.getContext('2d')!
+  context.imageSmoothingEnabled = true
+  context.imageSmoothingQuality = 'high'
+  context.drawImage(source, 0, 0, thumb.width, thumb.height)
+
+  return thumb
 }
 
 /**
@@ -171,14 +206,18 @@ export async function capturePhoto(
   drawGrain(filteredContext, width, height, style.grainOpacity)
   drawVignette(filteredContext, width, height, style.vignetteStrength)
 
-  const [original, filtered] = await Promise.all([
+  const [original, filtered, thumbnail] = await Promise.all([
     toBlob(originalCanvas),
     toBlob(filteredCanvas),
+    toBlob(makeThumbnail(filteredCanvas), THUMB_QUALITY),
   ])
 
   return {
     original,
     filtered,
-    previewUrl: filteredCanvas.toDataURL('image/jpeg', 0.6),
+    thumbnail,
+    // Object URL, bukan toDataURL: base64 membengkakkan gambar ~33% dan harus
+    // dirakit jadi string raksasa di memori sebelum bisa dipakai.
+    previewUrl: URL.createObjectURL(thumbnail),
   }
 }

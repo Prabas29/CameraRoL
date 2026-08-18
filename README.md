@@ -201,6 +201,33 @@ ZIP "Unduh semua" dirakit di browser dengan JSZip. Signed URL Supabase mengirim
 `Access-Control-Allow-Origin: *` sehingga file bisa diambil langsung dari client,
 dan album besar tidak perlu melewati batas memori/waktu fungsi serverless.
 
+## Catatan performa
+
+Beberapa keputusan di kode ini ada alasannya, dan gampang tanpa sengaja
+dibatalkan:
+
+- **Jangan impor dari barrel `radix-ui`.** Pakai paket spesifik
+  (`@radix-ui/react-dialog`, dst). Barrel-nya tidak ter-tree-shake dan menyeret
+  ~160 kB primitif tak terpakai ke hampir setiap rute — termasuk landing page.
+- **Jangan panggil supabase-js dari komponen client.** Login memakai server
+  action justru supaya SDK-nya (164 kB) tidak ikut ke browser. Tidak ada
+  `lib/supabase/client.ts` — itu disengaja.
+- **Middleware hanya berjalan di `/dashboard` dan `/login`.** Memperluas
+  matcher-nya berarti setiap request tamu ikut menanggung satu round-trip
+  `auth.getUser()` ke Supabase.
+- **Grid memakai `thumbUrl`, lightbox dan unduhan memakai `url`.** Tiap foto
+  disimpan tiga versi: mentah, filtered penuh (1600 px @ 0.9), dan thumbnail
+  (480 px @ 0.72). Yang dilihat besar selalu versi penuh.
+
+Untuk melihat isi bundle sebagai treemap:
+
+```bash
+ANALYZE=true npm run build          # macOS/Linux
+$env:ANALYZE="true"; npm run build  # PowerShell
+```
+
+Hasilnya di `.next/analyze/client.html`.
+
 ## Film style
 
 `lib/film-styles.ts` memegang satu `cssFilter` per style yang dipakai apa adanya

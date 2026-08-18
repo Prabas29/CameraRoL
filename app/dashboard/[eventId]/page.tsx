@@ -49,7 +49,13 @@ export default async function EventDetailPage({ params, searchParams }: PageProp
 
   // Host boleh melihat foto kapan saja — ini acaranya sendiri, dan dia butuh
   // ini untuk moderasi. Gerbang reveal hanya berlaku untuk tamu.
-  const signedUrls = await signPhotoUrls(photoList.map((photo) => photo.filtered_storage_path))
+  const signedUrls = await signPhotoUrls(
+    photoList.flatMap((photo) =>
+      photo.thumb_storage_path
+        ? [photo.filtered_storage_path, photo.thumb_storage_path]
+        : [photo.filtered_storage_path],
+    ),
+  )
 
   const photos: GalleryPhoto[] = photoList.flatMap((photo) => {
     const url = signedUrls.get(photo.filtered_storage_path)
@@ -60,6 +66,7 @@ export default async function EventDetailPage({ params, searchParams }: PageProp
         guestName: guestNames.get(photo.guest_id) ?? 'Tamu',
         createdAt: photo.created_at,
         url,
+        thumbUrl: (photo.thumb_storage_path && signedUrls.get(photo.thumb_storage_path)) || url,
         filename: `${photo.id}.jpg`,
       },
     ]

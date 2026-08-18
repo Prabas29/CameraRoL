@@ -3,8 +3,11 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { STORAGE_BUCKET } from '@/lib/env'
 import { getPublicEvent, isUuid } from '@/lib/events'
 import { getGuest } from '@/lib/guest-session'
-import { filteredPath, originalPath } from '@/lib/photos'
+import { filteredPath, originalPath, thumbPath } from '@/lib/photos'
 import { createAdminClient } from '@/lib/supabase/admin'
+import type { Database } from '@/types/database'
+
+type PhotoInsert = Database['public']['Tables']['photos']['Insert']
 
 const MAX_BYTES = 10 * 1024 * 1024 // sejalan dengan file_size_limit bucket
 
@@ -49,6 +52,7 @@ export async function POST(
 
   const original = formData.get('original')
   const filtered = formData.get('filtered')
+  const thumbnail = formData.get('thumbnail')
 
   if (!(original instanceof File) || !(filtered instanceof File)) {
     return NextResponse.json({ error: 'Foto tidak lengkap.' }, { status: 400 })
@@ -60,40 +64,61 @@ export async function POST(
     return NextResponse.json({ error: 'Foto terlalu besar.' }, { status: 413 })
   }
 
+  const hasThumb = thumbnail instanceof File && thumbnail.size > 0
+
   const admin = createAdminClient()
   const photoId = crypto.randomUUID()
   const originalKey = originalPath(eventId, photoId)
   const filteredKey = filteredPath(eventId, photoId)
+  const thumbKey = thumbPath(eventId, photoId)
+
+  const uploadOptions = { contentType: 'image/jpeg', upsert: false }
 
   const uploads = await Promise.all([
-    admin.storage.from(STORAGE_BUCKET).upload(originalKey, original, {
-      contentType: 'image/jpeg',
-      upsert: false,
-    }),
-    admin.storage.from(STORAGE_BUCKET).upload(filteredKey, filtered, {
-      contentType: 'image/jpeg',
-      upsert: false,
-    }),
+    admin.storage.from(STORAGE_BUCKET).upload(originalKey, original, uploadOptions),
+    admin.storage.from(STORAGE_BUCKET).upload(filteredKey, filtered, uploadOptions),
+    ...(hasThumb
+      ? [admin.storage.from(STORAGE_BUCKET).upload(thumbKey, thumbnail, uploadOptions)]
+      : []),
   ])
+
+  const allKeys = hasThumb ? [originalKey, filteredKey, thumbKey] : [originalKey, filteredKey]
 
   const failed = uploads.find((upload) => upload.error)
   if (failed) {
     // Bersihkan file yang sempat naik supaya tidak ada sampah tanpa baris DB.
-    await admin.storage.from(STORAGE_BUCKET).remove([originalKey, filteredKey])
+    await admin.storage.from(STORAGE_BUCKET).remove(allKeys)
     return NextResponse.json({ error: 'Gagal mengunggah foto.' }, { status: 502 })
   }
 
-  const { error: insertError } = await admin.from('photos').insert({
+  const baseRow: PhotoInsert = {
     id: photoId,
     event_id: eventId,
     guest_id: guest.id,
     storage_path: originalKey,
     filtered_storage_path: filteredKey,
     film_style_applied: event.film_style,
-  })
+  }
+
+  const row: PhotoInsert = hasThumb ? { ...baseRow, thumb_storage_path: thumbKey } : baseRow
+
+  let { error: insertError } = await admin.from('photos').insert(row)
+
+  // Kolom tidak dikenal, artinya migration 0002 belum dijalankan di project
+  // Supabase ini. Dua kode karena sumbernya berbeda: PostgREST menolak lebih
+  // dulu lewat schema cache-nya (PGRST204), sementara 42703 datang dari
+  // Postgres sendiri. Foto tetap harus tersimpan — sekadar tanpa thumbnail —
+  // supaya urutan deploy dan migration tidak saling mengunci.
+  if (insertError?.code === 'PGRST204' || insertError?.code === '42703') {
+    console.warn(
+      '[rol] Kolom thumb_storage_path belum ada. Jalankan supabase/migrations/0002_thumbnails.sql ' +
+        'agar gallery memuat thumbnail, bukan foto ukuran penuh.',
+    )
+    ;({ error: insertError } = await admin.from('photos').insert(baseRow))
+  }
 
   if (insertError) {
-    await admin.storage.from(STORAGE_BUCKET).remove([originalKey, filteredKey])
+    await admin.storage.from(STORAGE_BUCKET).remove(allKeys)
     return NextResponse.json({ error: 'Gagal menyimpan foto.' }, { status: 500 })
   }
 

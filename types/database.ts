@@ -44,6 +44,8 @@ export type PhotoRow = {
   storage_path: string
   /** path foto yang filternya sudah di-bake saat capture */
   filtered_storage_path: string
+  /** versi kecil untuk grid. null untuk foto sebelum migration 0002 */
+  thumb_storage_path?: string | null
   film_style_applied: FilmStyle
   is_deleted: boolean
   created_at: string
@@ -63,7 +65,10 @@ export interface GalleryPhoto {
   id: string
   guestName: string
   createdAt: string
+  /** Versi penuh — dipakai lightbox, unduhan satuan, dan ZIP. */
   url: string
+  /** Versi kecil untuk grid. Jatuh ke `url` kalau foto belum punya thumbnail. */
+  thumbUrl: string
   filename: string
 }
 

@@ -123,12 +123,16 @@ export function GuestGallery({
             onClick={() => setActiveIndex(index)}
             className="group relative overflow-hidden rounded-lg border transition-colors hover:border-primary/60"
           >
+            {/* Grid memakai thumbnail; versi penuh baru dimuat saat lightbox
+                dibuka. Album 100 foto jadi hemat puluhan MB tanpa mengurangi
+                kualitas apa pun yang benar-benar dilihat besar. */}
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src={photo.url}
+              src={photo.thumbUrl}
               alt={`Foto oleh ${photo.guestName}`}
               className="aspect-square w-full object-cover"
               loading="lazy"
+              decoding="async"
             />
             <span className="absolute inset-x-0 bottom-0 truncate bg-gradient-to-t from-black/80 to-transparent px-2 pb-2 pt-6 text-left text-xs text-white">
               {photo.guestName}

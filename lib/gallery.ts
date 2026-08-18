@@ -31,9 +31,12 @@ export async function getRevealedPhotos(event: PublicEventLike): Promise<Gallery
 
   const admin = createAdminClient()
 
+  // `select('*')` bukan daftar kolom eksplisit: kalau migration 0002 belum
+  // dijalankan, menyebut thumb_storage_path secara eksplisit akan membuat
+  // seluruh query gagal. Dengan '*' kolom itu sekadar tidak ada.
   const { data: rows, error: photosError } = await admin
     .from('photos')
-    .select('id, guest_id, filtered_storage_path, created_at')
+    .select('*')
     .eq('event_id', event.id)
     .eq('is_deleted', false)
     .order('created_at', { ascending: true })
@@ -57,7 +60,14 @@ export async function getRevealedPhotos(event: PublicEventLike): Promise<Gallery
   }
 
   const guestNames = new Map((guests ?? []).map((guest) => [guest.id, guest.name]))
-  const signedUrls = await signPhotoUrls(rows.map((row) => row.filtered_storage_path))
+
+  // Tandatangani versi penuh dan thumbnail dalam satu panggilan.
+  const pathsToSign = rows.flatMap((row) =>
+    row.thumb_storage_path
+      ? [row.filtered_storage_path, row.thumb_storage_path]
+      : [row.filtered_storage_path],
+  )
+  const signedUrls = await signPhotoUrls(pathsToSign)
 
   return rows.flatMap((row, index) => {
     const url = signedUrls.get(row.filtered_storage_path)
@@ -70,6 +80,8 @@ export async function getRevealedPhotos(event: PublicEventLike): Promise<Gallery
         guestName,
         createdAt: row.created_at,
         url,
+        // Foto lama belum punya thumbnail — pakai versi penuh supaya tetap tampil.
+        thumbUrl: (row.thumb_storage_path && signedUrls.get(row.thumb_storage_path)) || url,
         filename: photoFilename(guestName, row.created_at, index),
       },
     ]

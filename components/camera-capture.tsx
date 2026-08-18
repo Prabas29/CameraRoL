@@ -151,17 +151,24 @@ export function CameraCapture({
       const body = new FormData()
       body.append('original', photo.original, 'original.jpg')
       body.append('filtered', photo.filtered, 'filtered.jpg')
+      body.append('thumbnail', photo.thumbnail, 'thumbnail.jpg')
 
       const response = await fetch(`/api/events/${eventId}/photos`, { method: 'POST', body })
 
       if (!response.ok) {
         const payload = (await response.json().catch(() => ({}))) as { error?: string }
         toast.error(payload.error ?? 'Foto gagal tersimpan. Coba lagi.')
+        URL.revokeObjectURL(photo.previewUrl)
         return
       }
 
       setShotCount((count) => count + 1)
-      setLastShot(photo.previewUrl)
+      // previewUrl adalah object URL; lepaskan yang lama supaya blob-nya tidak
+      // menumpuk di memori sepanjang sesi memotret.
+      setLastShot((previous) => {
+        if (previous) URL.revokeObjectURL(previous)
+        return photo.previewUrl
+      })
       toast.success('Tersimpan & terkunci')
     } catch (caught) {
       toast.error(caught instanceof Error ? caught.message : 'Foto gagal diambil.')
