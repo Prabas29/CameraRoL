@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 
 import { getPublicEvent, isUuid } from '@/lib/events'
 import { guestCookieName, guestCookieOptions } from '@/lib/guest-session'
+import { getT } from '@/lib/i18n/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 
 interface JoinBody {
@@ -21,31 +22,32 @@ export async function POST(
   { params }: { params: Promise<{ eventId: string }> },
 ) {
   const { eventId } = await params
+  const t = await getT()
 
   if (!isUuid(eventId)) {
-    return NextResponse.json({ error: 'Acara tidak ditemukan.' }, { status: 404 })
+    return NextResponse.json({ error: t.api.eventNotFound }, { status: 404 })
   }
 
   let body: JoinBody
   try {
     body = (await request.json()) as JoinBody
   } catch {
-    return NextResponse.json({ error: 'Permintaan tidak valid.' }, { status: 400 })
+    return NextResponse.json({ error: t.api.invalidRequest }, { status: 400 })
   }
 
   const deviceId = typeof body.deviceId === 'string' ? body.deviceId : ''
   const name = typeof body.name === 'string' ? body.name.trim() : ''
 
   if (!isUuid(deviceId)) {
-    return NextResponse.json({ error: 'Perangkat tidak dikenali.' }, { status: 400 })
+    return NextResponse.json({ error: t.api.deviceUnknown }, { status: 400 })
   }
   if (name.length < 1 || name.length > 40) {
-    return NextResponse.json({ error: 'Nama wajib diisi, maksimal 40 karakter.' }, { status: 400 })
+    return NextResponse.json({ error: t.api.nameRequired }, { status: 400 })
   }
 
   const event = await getPublicEvent(eventId)
   if (!event) {
-    return NextResponse.json({ error: 'Acara tidak ditemukan.' }, { status: 404 })
+    return NextResponse.json({ error: t.api.eventNotFound }, { status: 404 })
   }
 
   const admin = createAdminClient()
@@ -63,7 +65,7 @@ export async function POST(
     .single()
 
   if (error || !guest) {
-    return NextResponse.json({ error: 'Gagal bergabung. Coba lagi.' }, { status: 500 })
+    return NextResponse.json({ error: t.api.joinFailed }, { status: 500 })
   }
 
   const response = NextResponse.json({ guestId: guest.id, name: guest.name })

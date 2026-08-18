@@ -5,13 +5,16 @@ import Link from 'next/link'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 
+import { useT } from '@/components/i18n-provider'
 import { Button } from '@/components/ui/button'
 import { capturePhoto } from '@/lib/bake-photo'
 import { grainDataUri, type FilmStyleDef } from '@/lib/film-styles'
+import type { Dictionary } from '@/lib/i18n/dictionaries'
 import { cn } from '@/lib/utils'
 
 type CameraState = 'starting' | 'ready' | 'error'
 type FacingMode = 'environment' | 'user'
+type CameraErrorCopy = Dictionary['camera']['errors']
 
 interface CameraError {
   title: string
@@ -19,32 +22,19 @@ interface CameraError {
 }
 
 /** Menerjemahkan error getUserMedia jadi kalimat yang bisa ditindaklanjuti tamu. */
-function describeError(error: unknown): CameraError {
+function describeError(error: unknown, copy: CameraErrorCopy): CameraError {
   const name = error instanceof Error ? error.name : ''
 
   if (name === 'NotAllowedError' || name === 'SecurityError') {
-    return {
-      title: 'Izin kamera ditolak',
-      detail:
-        'Buka pengaturan izin situs di browser, aktifkan kamera untuk halaman ini, lalu muat ulang.',
-    }
+    return { title: copy.deniedTitle, detail: copy.deniedDetail }
   }
   if (name === 'NotFoundError' || name === 'OverconstrainedError') {
-    return {
-      title: 'Kamera tidak ditemukan',
-      detail: 'Perangkat ini sepertinya tidak punya kamera yang bisa dipakai browser.',
-    }
+    return { title: copy.notFoundTitle, detail: copy.notFoundDetail }
   }
   if (name === 'NotReadableError') {
-    return {
-      title: 'Kamera sedang dipakai',
-      detail: 'Tutup aplikasi lain yang memakai kamera, lalu muat ulang halaman ini.',
-    }
+    return { title: copy.inUseTitle, detail: copy.inUseDetail }
   }
-  return {
-    title: 'Kamera gagal dinyalakan',
-    detail: 'Coba muat ulang halaman. Kalau masih gagal, buka lewat browser lain.',
-  }
+  return { title: copy.genericTitle, detail: copy.genericDetail }
 }
 
 export function CameraCapture({
@@ -58,6 +48,7 @@ export function CameraCapture({
   guestName: string
   style: FilmStyleDef
 }) {
+  const t = useT()
   const videoRef = useRef<HTMLVideoElement>(null)
   const streamRef = useRef<MediaStream | null>(null)
 
@@ -77,6 +68,12 @@ export function CameraCapture({
     streamRef.current = null
   }, [])
 
+  // Kamus disimpan di ref, bukan jadi dependency efek. Kalau ikut jadi
+  // dependency, mengganti bahasa akan memasang ulang kamera di tengah sesi —
+  // dan di sebagian browser itu memunculkan permintaan izin lagi.
+  const errorCopyRef = useRef(t.camera.errors)
+  errorCopyRef.current = t.camera.errors
+
   useEffect(() => {
     let cancelled = false
 
@@ -84,15 +81,15 @@ export function CameraCapture({
       setState('starting')
       setError(null)
 
+      const copy = errorCopyRef.current
+
       // getUserMedia hanya ada di secure context. Ini penyebab paling sering
       // orang bingung: membuka dev server lewat IP LAN (http://192.168.x.x)
       // tidak akan pernah bisa mengakses kamera.
       if (typeof navigator === 'undefined' || !navigator.mediaDevices?.getUserMedia) {
         setError({
-          title: 'Kamera tidak tersedia di halaman ini',
-          detail: window.isSecureContext
-            ? 'Browser ini tidak mendukung akses kamera. Coba Chrome atau Safari versi terbaru.'
-            : 'Kamera hanya bisa diakses lewat HTTPS atau localhost. Buka halaman ini dari alamat https://, bukan dari alamat IP.',
+          title: copy.unavailableTitle,
+          detail: window.isSecureContext ? copy.unsupportedDetail : copy.insecureDetail,
         })
         setState('error')
         return
@@ -102,11 +99,7 @@ export function CameraCapture({
 
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
-          video: {
-            facingMode,
-            width: { ideal: 1920 },
-            height: { ideal: 1920 },
-          },
+          video: { facingMode, width: { ideal: 1920 }, height: { ideal: 1920 } },
           audio: false,
         })
 
@@ -124,7 +117,7 @@ export function CameraCapture({
         setState('ready')
       } catch (caught) {
         if (cancelled) return
-        setError(describeError(caught))
+        setError(describeError(caught, copy))
         setState('error')
       }
     }
@@ -156,8 +149,7 @@ export function CameraCapture({
       const response = await fetch(`/api/events/${eventId}/photos`, { method: 'POST', body })
 
       if (!response.ok) {
-        const payload = (await response.json().catch(() => ({}))) as { error?: string }
-        toast.error(payload.error ?? 'Foto gagal tersimpan. Coba lagi.')
+        toast.error(t.camera.saveFailedToast)
         URL.revokeObjectURL(photo.previewUrl)
         return
       }
@@ -169,9 +161,9 @@ export function CameraCapture({
         if (previous) URL.revokeObjectURL(previous)
         return photo.previewUrl
       })
-      toast.success('Tersimpan & terkunci')
-    } catch (caught) {
-      toast.error(caught instanceof Error ? caught.message : 'Foto gagal diambil.')
+      toast.success(t.camera.savedToast)
+    } catch {
+      toast.error(t.camera.captureFailed)
     } finally {
       setBusy(false)
     }
@@ -183,12 +175,12 @@ export function CameraCapture({
         <div className="min-w-0">
           <p className="truncate text-sm font-medium">{eventName}</p>
           <p className="truncate text-xs text-white/60">
-            {guestName} · {style.label}
+            {guestName} · {t.filmStyles[style.id].label}
           </p>
         </div>
         <div className="flex shrink-0 items-center gap-2">
           <span className="rounded-full bg-white/10 px-3 py-1 font-mono text-xs tabular-nums">
-            {shotCount} foto
+            {t.camera.photoCount(shotCount)}
           </span>
           {/* Gallery yang memutuskan: kalau belum waktunya, ia mengalihkan
               sendiri ke halaman tunggu berisi countdown. */}
@@ -198,7 +190,7 @@ export function CameraCapture({
             variant="ghost"
             className="text-white hover:bg-white/10 hover:text-white"
           >
-            <Link href={`/e/${eventId}/gallery`}>Album</Link>
+            <Link href={`/e/${eventId}/gallery`}>{t.camera.album}</Link>
           </Button>
         </div>
       </header>
@@ -206,7 +198,7 @@ export function CameraCapture({
       <div className="flex flex-1 items-center justify-center px-4">
         <div
           className={cn(
-            'relative w-full max-w-md overflow-hidden rounded-xl bg-neutral-900',
+            'relative w-full max-w-md overflow-hidden rounded-2xl bg-neutral-900',
             portrait ? 'aspect-[3/4]' : 'aspect-[4/3]',
           )}
         >
@@ -245,21 +237,21 @@ export function CameraCapture({
 
           {state === 'starting' ? (
             <p className="absolute inset-0 flex items-center justify-center text-sm text-white/70">
-              Menyalakan kamera…
+              {t.camera.starting}
             </p>
           ) : null}
 
           {state === 'error' && error ? (
             <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 p-6 text-center">
               <p className="text-sm font-medium text-white">{error.title}</p>
-              <p className="text-xs text-white/60">{error.detail}</p>
+              <p className="text-xs leading-relaxed text-white/60">{error.detail}</p>
               <Button
                 size="sm"
                 variant="secondary"
                 className="mt-2"
                 onClick={() => window.location.reload()}
               >
-                Muat ulang
+                {t.camera.reload}
               </Button>
             </div>
           ) : null}
@@ -268,8 +260,8 @@ export function CameraCapture({
             /* eslint-disable-next-line @next/next/no-img-element */
             <img
               src={lastShot}
-              alt="Foto terakhir"
-              className="absolute bottom-3 left-3 size-14 rounded-md border-2 border-white/70 object-cover"
+              alt={t.camera.lastPhoto}
+              className="absolute bottom-3 left-3 size-14 rounded-lg border-2 border-white/70 object-cover"
             />
           ) : null}
         </div>
@@ -281,7 +273,7 @@ export function CameraCapture({
             type="button"
             variant="ghost"
             size="icon"
-            aria-label="Ganti kamera depan/belakang"
+            aria-label={t.camera.switchCamera}
             disabled={state !== 'ready' || busy}
             onClick={() => setFacingMode((mode) => (mode === 'environment' ? 'user' : 'environment'))}
             className="text-white hover:bg-white/10 hover:text-white"
@@ -293,7 +285,7 @@ export function CameraCapture({
             type="button"
             onClick={handleShutter}
             disabled={state !== 'ready' || busy}
-            aria-label="Ambil foto"
+            aria-label={t.camera.shutter}
             className={cn(
               'size-20 rounded-full border-4 border-white/80 p-1.5 transition-transform',
               'disabled:opacity-40 active:scale-95',
@@ -308,13 +300,11 @@ export function CameraCapture({
           </button>
 
           {/* Penyeimbang lebar agar tombol shutter tetap di tengah. */}
-          <span className="size-9" aria-hidden />
+          <span className="size-10" aria-hidden />
         </div>
 
-        <p className="text-center text-xs text-white/50">
-          {busy
-            ? 'Menyimpan foto…'
-            : 'Fotomu langsung terkunci. Belum ada yang bisa melihatnya, termasuk kamu.'}
+        <p className="text-center text-xs leading-relaxed text-white/50">
+          {busy ? t.camera.saving : t.camera.lockedNote}
         </p>
       </footer>
     </div>

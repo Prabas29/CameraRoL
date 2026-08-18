@@ -3,12 +3,14 @@
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 
+import { useT } from '@/components/i18n-provider'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { getDeviceId, getStoredGuestName, storeGuestName } from '@/lib/device'
 
 export function GuestJoinForm({ eventId }: { eventId: string }) {
+  const t = useT()
   const router = useRouter()
   const [name, setName] = useState('')
   const [submitting, setSubmitting] = useState(false)
@@ -36,7 +38,7 @@ export function GuestJoinForm({ eventId }: { eventId: string }) {
       const payload = (await response.json()) as { error?: string }
 
       if (!response.ok) {
-        setError(payload.error ?? 'Gagal bergabung. Coba lagi.')
+        setError(payload.error ?? t.join.joinFailed)
         setSubmitting(false)
         return
       }
@@ -44,7 +46,7 @@ export function GuestJoinForm({ eventId }: { eventId: string }) {
       storeGuestName(eventId, name.trim())
       router.replace(`/e/${eventId}/camera`)
     } catch {
-      setError('Tidak bisa terhubung. Cek koneksimu, lalu coba lagi.')
+      setError(t.join.connectError)
       setSubmitting(false)
     }
   }
@@ -52,25 +54,25 @@ export function GuestJoinForm({ eventId }: { eventId: string }) {
   return (
     <form onSubmit={handleSubmit} className="grid gap-4">
       <div className="grid gap-2">
-        <Label htmlFor="guest-name">Namamu</Label>
+        <Label htmlFor="guest-name">{t.join.nameLabel}</Label>
         <Input
           id="guest-name"
           required
           maxLength={40}
           autoComplete="name"
-          placeholder="Dina"
+          placeholder={t.join.namePlaceholder}
           value={name}
           onChange={(changeEvent) => setName(changeEvent.target.value)}
         />
         <p className="text-xs text-muted-foreground">
-          Nama ini muncul di bawah foto-fotomu saat album dibuka.
+          {t.join.nameNote}
         </p>
       </div>
 
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
 
       <Button type="submit" size="lg" disabled={submitting || name.trim().length === 0}>
-        {submitting ? 'Menyiapkan kamera…' : 'Mulai memotret'}
+        {submitting ? t.join.starting : t.join.start}
       </Button>
     </form>
   )

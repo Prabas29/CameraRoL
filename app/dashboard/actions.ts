@@ -22,7 +22,7 @@ export async function createEvent(_prev: ActionResult, formData: FormData): Prom
     data: { user },
   } = await supabase.auth.getUser()
 
-  if (!user) return { error: 'Sesi habis. Coba masuk lagi.' }
+  if (!user) return { error: 'sessionExpired' }
 
   const name = String(formData.get('name') ?? '').trim()
   const filmStyle = String(formData.get('film_style') ?? '')
@@ -30,22 +30,22 @@ export async function createEvent(_prev: ActionResult, formData: FormData): Prom
   const revealAtRaw = String(formData.get('reveal_at') ?? '').trim()
 
   if (name.length < 1 || name.length > 80) {
-    return { error: 'Nama acara wajib diisi, maksimal 80 karakter.' }
+    return { error: 'nameRequired' }
   }
   if (!isFilmStyle(filmStyle)) {
-    return { error: 'Film style tidak dikenal.' }
+    return { error: 'unknownStyle' }
   }
   if (revealMode !== 'scheduled' && revealMode !== 'manual') {
-    return { error: 'Mode reveal tidak dikenal.' }
+    return { error: 'unknownMode' }
   }
 
   let revealAt: string | null = null
   if (revealMode === 'scheduled') {
-    if (!revealAtRaw) return { error: 'Pilih waktu reveal dulu.' }
+    if (!revealAtRaw) return { error: 'pickReveal' }
     const parsed = new Date(revealAtRaw)
-    if (Number.isNaN(parsed.getTime())) return { error: 'Waktu reveal tidak valid.' }
+    if (Number.isNaN(parsed.getTime())) return { error: 'invalidReveal' }
     if (parsed.getTime() <= Date.now()) {
-      return { error: 'Waktu reveal harus di masa depan.' }
+      return { error: 'mustBeFuture' }
     }
     revealAt = parsed.toISOString()
   }
@@ -63,7 +63,7 @@ export async function createEvent(_prev: ActionResult, formData: FormData): Prom
     .single()
 
   if (error || !data) {
-    return { error: error?.message ?? 'Gagal membuat acara.' }
+    return { error: 'createFailed' }
   }
 
   revalidatePath('/dashboard')
@@ -79,7 +79,7 @@ export async function revealEvent(eventId: string): Promise<ActionResult> {
     .update({ is_revealed: true })
     .eq('id', eventId)
 
-  if (error) return { error: error.message }
+  if (error) return { error: 'createFailed' }
 
   revalidatePath(`/dashboard/${eventId}`)
   revalidatePath('/dashboard')
@@ -88,7 +88,7 @@ export async function revealEvent(eventId: string): Promise<ActionResult> {
 
 /** Mengganti film style event. Hanya memengaruhi foto yang diambil setelahnya. */
 export async function updateFilmStyle(eventId: string, filmStyle: string): Promise<ActionResult> {
-  if (!isFilmStyle(filmStyle)) return { error: 'Film style tidak dikenal.' }
+  if (!isFilmStyle(filmStyle)) return { error: 'unknownStyle' }
 
   const supabase = await createClient()
   const { error } = await supabase
@@ -96,7 +96,7 @@ export async function updateFilmStyle(eventId: string, filmStyle: string): Promi
     .update({ film_style: filmStyle })
     .eq('id', eventId)
 
-  if (error) return { error: error.message }
+  if (error) return { error: 'createFailed' }
 
   revalidatePath(`/dashboard/${eventId}`)
   return { error: null }
@@ -115,7 +115,7 @@ export async function deletePhoto(eventId: string, photoId: string): Promise<Act
     .eq('id', photoId)
     .eq('event_id', eventId)
 
-  if (error) return { error: error.message }
+  if (error) return { error: 'createFailed' }
 
   revalidatePath(`/dashboard/${eventId}`)
   return { error: null }

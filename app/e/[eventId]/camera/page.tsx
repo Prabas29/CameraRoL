@@ -4,8 +4,12 @@ import { CameraCapture } from '@/components/camera-capture'
 import { getPublicEvent } from '@/lib/events'
 import { getFilmStyle } from '@/lib/film-styles'
 import { getGuest } from '@/lib/guest-session'
+import { getT } from '@/lib/i18n/server'
 
-export const metadata = { title: 'Kamera — Rol' }
+export async function generateMetadata() {
+  const t = await getT()
+  return { title: t.meta.camera }
+}
 
 export default async function CameraPage({ params }: { params: Promise<{ eventId: string }> }) {
   const { eventId } = await params

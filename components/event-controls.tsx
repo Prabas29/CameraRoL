@@ -7,6 +7,7 @@ import { toast } from 'sonner'
 import { revealEvent, updateFilmStyle } from '@/app/dashboard/actions'
 import { Countdown } from '@/components/countdown'
 import { FilmStylePicker } from '@/components/film-style-picker'
+import { useI18n } from '@/components/i18n-provider'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import {
@@ -27,6 +28,12 @@ export function EventControls({
   event: EventRow
   revealed: boolean
 }) {
+  const { locale, t } = useI18n()
+
+  // Server action mengembalikan KUNCI pesan, bukan kalimat jadi, supaya teksnya
+  // bisa mengikuti bahasa yang sedang aktif.
+  const actionError = (key: string) =>
+    t.newEvent.errors[key as keyof typeof t.newEvent.errors] ?? t.newEvent.errors.createFailed
   const router = useRouter()
   const [pending, startTransition] = useTransition()
   const [confirmOpen, setConfirmOpen] = useState(false)
@@ -40,10 +47,10 @@ export function EventControls({
       const result = await updateFilmStyle(event.id, next)
       if (result.error) {
         setFilmStyle(previous)
-        toast.error(result.error)
+        toast.error(actionError(result.error))
         return
       }
-      toast.success('Film style diperbarui')
+      toast.success(t.eventDetail.styleUpdated)
       router.refresh()
     })
   }
@@ -53,10 +60,10 @@ export function EventControls({
       const result = await revealEvent(event.id)
       setConfirmOpen(false)
       if (result.error) {
-        toast.error(result.error)
+        toast.error(actionError(result.error))
         return
       }
-      toast.success('Foto sudah terbuka untuk semua tamu')
+      toast.success(t.eventDetail.openedToast)
       router.refresh()
     })
   }
@@ -65,11 +72,11 @@ export function EventControls({
     <div className="grid gap-6">
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Status</CardTitle>
+          <CardTitle className="text-base">{t.eventDetail.statusTitle}</CardTitle>
           <CardDescription>
             {revealed
-              ? 'Semua tamu sudah bisa melihat dan mengunduh foto.'
-              : 'Foto tersimpan aman dan belum bisa dilihat siapa pun kecuali kamu.'}
+              ? t.eventDetail.statusRevealed
+              : t.eventDetail.statusLocked}
           </CardDescription>
         </CardHeader>
 
@@ -78,21 +85,21 @@ export function EventControls({
             <div className="grid gap-2">
               <Countdown targetIso={event.reveal_at} onComplete={() => router.refresh()} />
               <p className="text-xs text-muted-foreground">
-                Terbuka otomatis {formatRevealTime(event.reveal_at)}
+                {t.eventDetail.autoOpenAt(formatRevealTime(event.reveal_at, locale))}
               </p>
             </div>
           ) : null}
 
           {!revealed && !event.reveal_at ? (
             <p className="text-sm text-muted-foreground">
-              Acara ini mode manual — foto terbuka begitu kamu menekan tombol di bawah.
+              {t.eventDetail.manualNote}
             </p>
           ) : null}
 
           {!revealed ? (
             <div>
               <Button onClick={() => setConfirmOpen(true)} disabled={pending}>
-                Buka foto sekarang
+                {t.eventDetail.openNow}
               </Button>
             </div>
           ) : null}
@@ -101,10 +108,9 @@ export function EventControls({
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Film style</CardTitle>
+          <CardTitle className="text-base">{t.eventDetail.filmTitle}</CardTitle>
           <CardDescription>
-            Berlaku untuk foto yang diambil setelah ini. Foto lama tetap memakai style saat
-            dipotret — file mentahnya tersimpan, jadi bisa dirender ulang nanti.
+            {t.eventDetail.filmDesc}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -115,18 +121,17 @@ export function EventControls({
       <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Buka foto sekarang?</DialogTitle>
+            <DialogTitle>{t.eventDetail.confirmTitle}</DialogTitle>
             <DialogDescription>
-              Semua tamu langsung bisa melihat dan mengunduh seluruh foto di acara ini.
-              Tindakan ini tidak bisa dibatalkan lewat aplikasi.
+              {t.eventDetail.confirmDesc}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="ghost" onClick={() => setConfirmOpen(false)} disabled={pending}>
-              Batal
+              {t.common.cancel}
             </Button>
             <Button onClick={handleReveal} disabled={pending}>
-              {pending ? 'Membuka…' : 'Ya, buka sekarang'}
+              {pending ? t.eventDetail.opening : t.eventDetail.confirmYes}
             </Button>
           </DialogFooter>
         </DialogContent>

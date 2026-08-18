@@ -1,11 +1,12 @@
 'use client'
 
 import { format } from 'date-fns'
-import { id as localeId } from 'date-fns/locale'
+import { enGB, id as localeId } from 'date-fns/locale'
 import { CalendarIcon, ClockIcon } from 'lucide-react'
 import dynamic from 'next/dynamic'
 import { useState } from 'react'
 
+import { useI18n } from '@/components/i18n-provider'
 import { Button } from '@/components/ui/button'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import {
@@ -37,11 +38,10 @@ const Calendar = dynamic(
   () => import('@/components/ui/calendar').then((mod) => mod.Calendar),
   {
     ssr: false,
-    loading: () => (
-      <div className="flex h-64 w-64 items-center justify-center text-sm text-muted-foreground">
-        Memuat kalender…
-      </div>
-    ),
+    // Placeholder tanpa teks: fallback ini dirender di luar pohon komponen,
+    // jadi tidak punya akses ke kamus bahasa. Kotak berdenyut netral di semua
+    // bahasa dan tidak perlu diterjemahkan.
+    loading: () => <div className="m-3 h-64 w-64 animate-pulse rounded-xl bg-secondary" />,
   },
 )
 
@@ -70,7 +70,7 @@ export function DateTimePicker({
   onChange,
   disabled = false,
   id,
-  placeholder = 'Pilih tanggal & waktu',
+  placeholder,
 }: {
   value: Date | undefined
   onChange: (next: Date | undefined) => void
@@ -78,6 +78,8 @@ export function DateTimePicker({
   id?: string
   placeholder?: string
 }) {
+  const { locale, t } = useI18n()
+  const dateLocale = locale === 'en' ? enGB : localeId
   const [open, setOpen] = useState(false)
 
   const hours = value ? value.getHours() : DEFAULT_HOUR
@@ -114,10 +116,10 @@ export function DateTimePicker({
           <CalendarIcon className="size-4 shrink-0 text-primary" />
           {value ? (
             <span className="tabular-nums">
-              {format(value, 'd MMMM yyyy', { locale: localeId })}, {pad(hours)}:{pad(minutes)}
+              {format(value, 'd MMMM yyyy', { locale: dateLocale })}, {pad(hours)}:{pad(minutes)}
             </span>
           ) : (
-            <span>{placeholder}</span>
+            <span>{placeholder ?? t.newEvent.pickDateTime}</span>
           )}
         </Button>
       </PopoverTrigger>
@@ -129,14 +131,14 @@ export function DateTimePicker({
           onSelect={handleDaySelect}
           defaultMonth={value ?? new Date()}
           disabled={{ before: startOfToday() }}
-          locale={localeId}
+          locale={dateLocale}
           autoFocus
         />
 
         <div className="border-t p-3">
           <div className="mb-2 flex items-center gap-1.5 text-xs text-muted-foreground">
             <ClockIcon className="size-3.5" />
-            <span>Jam reveal</span>
+            <span>{t.newEvent.hourLabel}</span>
           </div>
 
           <div className="flex items-center gap-2">
@@ -144,7 +146,7 @@ export function DateTimePicker({
               value={String(hours)}
               onValueChange={(next) => handleTimeChange(Number(next), minutes)}
             >
-              <SelectTrigger className="flex-1 tabular-nums" aria-label="Jam">
+              <SelectTrigger className="flex-1 tabular-nums" aria-label={t.newEvent.hourAria}>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent position="popper" className="max-h-56">
@@ -162,7 +164,7 @@ export function DateTimePicker({
               value={String(minutes)}
               onValueChange={(next) => handleTimeChange(hours, Number(next))}
             >
-              <SelectTrigger className="flex-1 tabular-nums" aria-label="Menit">
+              <SelectTrigger className="flex-1 tabular-nums" aria-label={t.newEvent.minuteAria}>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent position="popper" className="max-h-56">
@@ -182,7 +184,7 @@ export function DateTimePicker({
             disabled={!value}
             onClick={() => setOpen(false)}
           >
-            Selesai
+            {t.newEvent.done}
           </Button>
         </div>
       </PopoverContent>

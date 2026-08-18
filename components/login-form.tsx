@@ -5,17 +5,11 @@ import { useActionState, useState } from 'react'
 
 import { sendMagicLink, signInWithGoogle, type LoginResult } from '@/app/login/actions'
 import { GoogleLogo } from '@/components/google-logo'
+import { useT } from '@/components/i18n-provider'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-
-const ERROR_MESSAGES: Record<string, string> = {
-  missing_code: 'Link tidak lengkap. Coba masuk sekali lagi.',
-  exchange_failed: 'Link sudah dipakai atau kedaluwarsa. Kirim ulang, ya.',
-  google_denied: 'Kamu membatalkan izin di Google. Coba lagi kalau berubah pikiran.',
-  oauth_failed: 'Login lewat Google gagal. Coba lagi atau pakai email.',
-}
 
 const initialState: LoginResult = { error: null, sentTo: null }
 
@@ -34,6 +28,8 @@ export function LoginForm({
   nextPath?: string
   linkError?: string | null
 }) {
+  const t = useT()
+
   const [emailState, sendEmail, sendingEmail] = useActionState(sendMagicLink, initialState)
   const [googleState, startGoogle, startingGoogle] = useActionState(signInWithGoogle, initialState)
 
@@ -45,21 +41,23 @@ export function LoginForm({
     return (
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Cek emailmu</CardTitle>
+          <CardTitle className="text-base">{t.login.sentTitle}</CardTitle>
           <CardDescription className="leading-relaxed">
-            Link masuk sudah dikirim ke{' '}
-            <span className="text-foreground">{emailState.sentTo}</span>. Buka link itu di
-            perangkat ini untuk melanjutkan.
+            {t.login.sentBodyBefore}
+            <span className="text-foreground">{emailState.sentTo}</span>
+            {t.login.sentBodyAfter}
           </CardDescription>
         </CardHeader>
       </Card>
     )
   }
 
-  const error =
-    googleState.error ??
-    emailState.error ??
-    (linkError ? (ERROR_MESSAGES[linkError] ?? 'Login bermasalah. Coba lagi.') : null)
+  // Server action mengirim kunci pesan, bukan kalimat jadi, supaya teksnya bisa
+  // mengikuti bahasa yang sedang aktif di browser.
+  const errorKey = googleState.error ?? emailState.error ?? linkError
+  const error = errorKey
+    ? (t.login.errors[errorKey as keyof typeof t.login.errors] ?? t.login.errors.generic)
+    : null
 
   return (
     <div className="grid gap-3">
@@ -82,17 +80,20 @@ export function LoginForm({
           className="w-full bg-card"
         >
           <GoogleLogo />
-          {startingGoogle ? 'Menghubungkan…' : 'Lanjutkan dengan Google'}
+          {startingGoogle ? t.login.googleLoading : t.login.google}
         </Button>
       </form>
 
       {emailOpen ? (
-        <form action={sendEmail} className="grid gap-3 duration-200 animate-in fade-in slide-in-from-top-1">
+        <form
+          action={sendEmail}
+          className="grid gap-3 duration-200 animate-in fade-in slide-in-from-top-1"
+        >
           <input type="hidden" name="next" value={nextPath} />
 
           <div className="grid gap-2">
             <Label htmlFor="email" className="text-xs text-muted-foreground">
-              Alamat email
+              {t.login.emailLabel}
             </Label>
             <Input
               id="email"
@@ -100,14 +101,14 @@ export function LoginForm({
               type="email"
               inputMode="email"
               autoComplete="email"
-              placeholder="kamu@email.com"
+              placeholder={t.login.emailPlaceholder}
               required
               autoFocus
             />
           </div>
 
           <Button type="submit" size="lg" disabled={sendingEmail} className="w-full">
-            {sendingEmail ? 'Mengirim…' : 'Kirim link masuk'}
+            {sendingEmail ? t.login.sending : t.login.sendLink}
           </Button>
 
           <button
@@ -115,7 +116,7 @@ export function LoginForm({
             onClick={() => setEmailOpen(false)}
             className="text-xs text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
           >
-            Batal
+            {t.common.cancel}
           </button>
         </form>
       ) : (
@@ -127,7 +128,7 @@ export function LoginForm({
           onClick={() => setEmailOpen(true)}
         >
           <MailIcon />
-          Masuk dengan Email
+          {t.login.withEmail}
         </Button>
       )}
     </div>

@@ -4,6 +4,7 @@ import { ChevronLeftIcon, ChevronRightIcon, DownloadIcon } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { toast } from 'sonner'
 
+import { useT } from '@/components/i18n-provider'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import { cn } from '@/lib/utils'
@@ -28,6 +29,7 @@ export function GuestGallery({
   photos: GalleryPhoto[]
   eventName: string
 }) {
+  const t = useT()
   const [activeIndex, setActiveIndex] = useState<number | null>(null)
   const [zipping, setZipping] = useState(false)
   const [zipProgress, setZipProgress] = useState(0)
@@ -62,7 +64,7 @@ export function GuestGallery({
       if (!response.ok) throw new Error()
       saveBlob(await response.blob(), photo.filename)
     } catch {
-      toast.error('Gagal mengunduh foto. Coba lagi.')
+      toast.error(t.gallery.downloadFailed)
     }
   }
 
@@ -92,10 +94,10 @@ export function GuestGallery({
       }
 
       const blob = await zip.generateAsync({ type: 'blob' })
-      saveBlob(blob, `rol-${slugify(eventName)}.zip`)
-      toast.success(`${photos.length} foto diunduh`)
+      saveBlob(blob, `camerarol-${slugify(eventName)}.zip`)
+      toast.success(t.gallery.downloadedToast(photos.length))
     } catch {
-      toast.error('Gagal membuat ZIP. Coba unduh beberapa foto satu per satu.')
+      toast.error(t.gallery.zipFailed)
     } finally {
       setZipping(false)
       setZipProgress(0)
@@ -106,12 +108,12 @@ export function GuestGallery({
     <>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-muted-foreground">
-          {photos.length} foto dari {countGuests(photos)} tamu
+          {t.gallery.summary(photos.length, countGuests(photos))}
         </p>
 
         <Button onClick={downloadAll} disabled={zipping || photos.length === 0}>
           <DownloadIcon className="size-4" />
-          {zipping ? `Menyiapkan… ${zipProgress}%` : 'Unduh semua (ZIP)'}
+          {zipping ? t.gallery.preparing(zipProgress) : t.gallery.downloadAll}
         </Button>
       </div>
 
@@ -129,7 +131,7 @@ export function GuestGallery({
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={photo.thumbUrl}
-              alt={`Foto oleh ${photo.guestName}`}
+              alt={t.eventDetail.photoBy(photo.guestName)}
               className="aspect-square w-full object-cover"
               loading="lazy"
               decoding="async"
@@ -152,13 +154,13 @@ export function GuestGallery({
         <DialogContent className="max-w-3xl gap-3 p-3 sm:p-4">
           {active ? (
             <>
-              <DialogTitle className="sr-only">Foto oleh {active.guestName}</DialogTitle>
+              <DialogTitle className="sr-only">{t.eventDetail.photoBy(active.guestName)}</DialogTitle>
 
               <div className="relative">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={active.url}
-                  alt={`Foto oleh ${active.guestName}`}
+                  alt={t.eventDetail.photoBy(active.guestName)}
                   className="max-h-[70svh] w-full rounded-xl bg-secondary object-contain"
                 />
 
@@ -174,13 +176,13 @@ export function GuestGallery({
                 <div className="min-w-0">
                   <p className="truncate text-sm font-medium">{active.guestName}</p>
                   <p className="text-xs text-muted-foreground tabular-nums">
-                    {activeIndex! + 1} dari {photos.length}
+                    {t.gallery.position(activeIndex! + 1, photos.length)}
                   </p>
                 </div>
 
                 <Button size="sm" variant="secondary" onClick={() => downloadOne(active)}>
                   <DownloadIcon className="size-4" />
-                  Unduh
+                  {t.gallery.download}
                 </Button>
               </div>
             </>
@@ -192,13 +194,14 @@ export function GuestGallery({
 }
 
 function NavButton({ side, onClick }: { side: 'left' | 'right'; onClick: () => void }) {
+  const t = useT()
   const Icon = side === 'left' ? ChevronLeftIcon : ChevronRightIcon
 
   return (
     <button
       type="button"
       onClick={onClick}
-      aria-label={side === 'left' ? 'Foto sebelumnya' : 'Foto berikutnya'}
+      aria-label={side === 'left' ? t.gallery.previous : t.gallery.next}
       className={cn(
         'absolute top-1/2 -translate-y-1/2 rounded-full bg-black/50 p-2 text-white transition-colors hover:bg-black/70',
         side === 'left' ? 'left-2' : 'right-2',

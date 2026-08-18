@@ -1,5 +1,6 @@
 'use client'
 
+import { useT } from '@/components/i18n-provider'
 import { FILM_STYLE_LIST, grainDataUri } from '@/lib/film-styles'
 import { cn } from '@/lib/utils'
 import type { FilmStyle } from '@/types/database'
@@ -18,10 +19,13 @@ export function FilmStylePicker({
   onChange: (next: FilmStyle) => void
   disabled?: boolean
 }) {
+  const t = useT()
+
   return (
     <div className="grid gap-3 sm:grid-cols-3">
       {FILM_STYLE_LIST.map((style) => {
         const selected = style.id === value
+        const copy = t.filmStyles[style.id]
 
         return (
           <button
@@ -61,9 +65,9 @@ export function FilmStylePicker({
             </div>
 
             <div className={cn('p-4', selected && 'bg-primary/8')}>
-              <span className="block text-sm font-semibold">{style.label}</span>
+              <span className="block text-sm font-semibold">{copy.label}</span>
               <span className="mt-1 block text-xs leading-relaxed text-muted-foreground">
-                {style.description}
+                {copy.description}
               </span>
             </div>
           </button>

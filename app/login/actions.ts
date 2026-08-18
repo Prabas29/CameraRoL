@@ -6,6 +6,13 @@ import { redirect } from 'next/navigation'
 import { siteUrl } from '@/lib/env'
 import { createClient } from '@/lib/supabase/server'
 
+/**
+ * `error` berisi KUNCI pesan (mis. 'invalidEmail'), bukan kalimat jadi.
+ *
+ * Server action tidak tahu bahasa mana yang sedang ditampilkan di tab pengguna,
+ * dan mengembalikan kalimat berbahasa Indonesia ke antarmuka berbahasa Inggris
+ * akan terlihat janggal. Komponen client yang menerjemahkan kuncinya.
+ */
 export interface LoginResult {
   error: string | null
   sentTo: string | null
@@ -45,7 +52,7 @@ export async function sendMagicLink(
   const nextPath = String(formData.get('next') ?? '')
 
   if (!email || !email.includes('@')) {
-    return { error: 'Masukkan alamat email yang valid.', sentTo: null }
+    return { error: 'invalidEmail', sentTo: null }
   }
 
   const supabase = await createClient()
@@ -54,7 +61,7 @@ export async function sendMagicLink(
     options: { emailRedirectTo: await callbackUrl(nextPath) },
   })
 
-  if (error) return { error: error.message, sentTo: null }
+  if (error) return { error: 'generic', sentTo: null }
 
   return { error: null, sentTo: email }
 }
@@ -91,10 +98,7 @@ export async function signInWithGoogle(
   })
 
   if (error || !data?.url) {
-    return {
-      error: error?.message ?? 'Tidak bisa menghubungi Google. Coba lagi sebentar.',
-      sentTo: null,
-    }
+    return { error: 'googleUnreachable', sentTo: null }
   }
 
   // redirect() melempar sinyal internal Next, jadi harus di luar try/catch.

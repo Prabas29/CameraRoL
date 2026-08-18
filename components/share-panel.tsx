@@ -4,6 +4,7 @@ import { QRCodeCanvas } from 'qrcode.react'
 import { useRef, useState } from 'react'
 import { toast } from 'sonner'
 
+import { useT } from '@/components/i18n-provider'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 
@@ -12,6 +13,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
  * QR untuk dicetak/ditempel di meja, link untuk disebar di grup chat.
  */
 export function SharePanel({ joinUrl, eventName }: { joinUrl: string; eventName: string }) {
+  const t = useT()
   const qrWrapperRef = useRef<HTMLDivElement>(null)
   const [copied, setCopied] = useState(false)
 
@@ -19,10 +21,10 @@ export function SharePanel({ joinUrl, eventName }: { joinUrl: string; eventName:
     try {
       await navigator.clipboard.writeText(joinUrl)
       setCopied(true)
-      toast.success('Link disalin')
+      toast.success(t.eventDetail.copiedToast)
       window.setTimeout(() => setCopied(false), 2000)
     } catch {
-      toast.error('Gagal menyalin. Salin manual dari kotak di atas, ya.')
+      toast.error(t.eventDetail.copyFailed)
     }
   }
 
@@ -32,7 +34,7 @@ export function SharePanel({ joinUrl, eventName }: { joinUrl: string; eventName:
 
     const link = document.createElement('a')
     link.href = canvas.toDataURL('image/png')
-    link.download = `rol-qr-${slugify(eventName)}.png`
+    link.download = `camerarol-qr-${slugify(eventName)}.png`
     link.click()
   }
 
@@ -44,7 +46,7 @@ export function SharePanel({ joinUrl, eventName }: { joinUrl: string; eventName:
     try {
       await navigator.share({
         title: eventName,
-        text: `Ikut foto di ${eventName} pakai Rol`,
+        text: t.eventDetail.shareText(eventName),
         url: joinUrl,
       })
     } catch {
@@ -55,9 +57,9 @@ export function SharePanel({ joinUrl, eventName }: { joinUrl: string; eventName:
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base">Bagikan ke tamu</CardTitle>
+        <CardTitle className="text-base">{t.eventDetail.shareTitle}</CardTitle>
         <CardDescription>
-          Cetak QR-nya, atau sebar linknya. Tamu tidak perlu instal aplikasi atau login.
+          {t.eventDetail.shareDesc}
         </CardDescription>
       </CardHeader>
 
@@ -79,13 +81,13 @@ export function SharePanel({ joinUrl, eventName }: { joinUrl: string; eventName:
 
           <div className="flex flex-wrap gap-2">
             <Button type="button" size="sm" onClick={copyLink}>
-              {copied ? 'Tersalin' : 'Salin link'}
+              {copied ? t.eventDetail.copied : t.eventDetail.copyLink}
             </Button>
             <Button type="button" size="sm" variant="secondary" onClick={downloadQr}>
-              Unduh QR
+              {t.eventDetail.downloadQr}
             </Button>
             <Button type="button" size="sm" variant="ghost" onClick={shareLink}>
-              Bagikan
+              {t.eventDetail.share}
             </Button>
           </div>
         </div>

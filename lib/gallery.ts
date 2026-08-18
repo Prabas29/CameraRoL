@@ -12,7 +12,7 @@ function photoFilename(guestName: string, createdAt: string, index: number): str
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/^-|-$/g, '')
-      .slice(0, 24) || 'tamu'
+      .slice(0, 24) || 'guest'
 
   const stamp = new Date(createdAt).toISOString().slice(0, 19).replace(/[:T]/g, '-')
   return `${String(index + 1).padStart(3, '0')}-${slug}-${stamp}.jpg`
@@ -26,7 +26,10 @@ function photoFilename(guestName: string, createdAt: string, index: number): str
  * pun signed URL — jadi tidak ada jalan bagi tamu untuk mendapatkan alamat foto
  * sebelum waktunya, seberapa pun kreatif mereka mengutak-atik client.
  */
-export async function getRevealedPhotos(event: PublicEventLike): Promise<GalleryPhoto[]> {
+export async function getRevealedPhotos(
+  event: PublicEventLike,
+  fallbackGuestName = 'Tamu',
+): Promise<GalleryPhoto[]> {
   if (!isRevealed(event)) return []
 
   const admin = createAdminClient()
@@ -73,7 +76,7 @@ export async function getRevealedPhotos(event: PublicEventLike): Promise<Gallery
     const url = signedUrls.get(row.filtered_storage_path)
     if (!url) return []
 
-    const guestName = guestNames.get(row.guest_id) ?? 'Tamu'
+    const guestName = guestNames.get(row.guest_id) ?? fallbackGuestName
     return [
       {
         id: row.id,

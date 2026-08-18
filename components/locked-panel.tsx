@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 import { useCallback, useEffect } from 'react'
 
 import { Countdown } from '@/components/countdown'
+import { useT } from '@/components/i18n-provider'
 
 /**
  * Tampilan tunggu sebelum reveal.
@@ -13,6 +14,7 @@ import { Countdown } from '@/components/countdown'
  * memajukan jam perangkat tidak menghasilkan apa-apa selain angka yang salah.
  */
 export function LockedPanel({ revealAtIso }: { revealAtIso: string | null }) {
+  const t = useT()
   const router = useRouter()
 
   const recheck = useCallback(() => router.refresh(), [router])
@@ -28,7 +30,7 @@ export function LockedPanel({ revealAtIso }: { revealAtIso: string | null }) {
   if (!revealAtIso) {
     return (
       <p className="text-sm text-muted-foreground">
-        Menunggu host membuka album. Halaman ini akan terbuka sendiri begitu itu terjadi.
+        {t.locked.waitingManual}
       </p>
     )
   }

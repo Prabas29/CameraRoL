@@ -5,6 +5,7 @@ import { useActionState, useState } from 'react'
 import { createEvent, type ActionResult } from '@/app/dashboard/actions'
 import { DateTimePicker } from '@/components/date-time-picker'
 import { FilmStylePicker } from '@/components/film-style-picker'
+import { useT } from '@/components/i18n-provider'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -15,6 +16,7 @@ import type { FilmStyle, RevealMode } from '@/types/database'
 const initialState: ActionResult = { error: null }
 
 export function CreateEventForm() {
+  const t = useT()
   const [state, formAction, pending] = useActionState(createEvent, initialState)
 
   const [filmStyle, setFilmStyle] = useState<FilmStyle>('vintage')
@@ -30,23 +32,28 @@ export function CreateEventForm() {
   const revealInPast = revealAt !== undefined && revealAt.getTime() <= Date.now()
   const revealInvalid = scheduled && (revealAt === undefined || revealInPast)
 
+  const error = state.error
+    ? (t.newEvent.errors[state.error as keyof typeof t.newEvent.errors] ??
+      t.newEvent.errors.createFailed)
+    : null
+
   return (
     <form action={formAction} className="grid gap-6">
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Nama acara</CardTitle>
-          <CardDescription>Ini yang dilihat tamu saat membuka link.</CardDescription>
+          <CardTitle className="text-base">{t.newEvent.nameTitle}</CardTitle>
+          <CardDescription>{t.newEvent.nameDesc}</CardDescription>
         </CardHeader>
         <CardContent>
           <Label htmlFor="name" className="sr-only">
-            Nama acara
+            {t.newEvent.nameTitle}
           </Label>
           <Input
             id="name"
             name="name"
             required
             maxLength={80}
-            placeholder="Nikahan Dina & Raka"
+            placeholder={t.newEvent.namePlaceholder}
             autoComplete="off"
           />
         </CardContent>
@@ -54,10 +61,8 @@ export function CreateEventForm() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Film style</CardTitle>
-          <CardDescription>
-            Semua foto di acara ini pakai tampilan yang sama. Bisa diganti nanti.
-          </CardDescription>
+          <CardTitle className="text-base">{t.newEvent.filmTitle}</CardTitle>
+          <CardDescription>{t.newEvent.filmDesc}</CardDescription>
         </CardHeader>
         <CardContent>
           <input type="hidden" name="film_style" value={filmStyle} />
@@ -67,57 +72,51 @@ export function CreateEventForm() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Kapan foto dibuka</CardTitle>
-          <CardDescription>
-            Sebelum waktu ini, tamu tidak bisa melihat foto siapa pun — termasuk fotonya sendiri.
-          </CardDescription>
+          <CardTitle className="text-base">{t.newEvent.revealTitle}</CardTitle>
+          <CardDescription className="leading-relaxed">{t.newEvent.revealDesc}</CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4">
           <input type="hidden" name="reveal_mode" value={revealMode} />
           <input type="hidden" name="reveal_at" value={scheduled ? revealIso : ''} />
 
-          <div className="grid gap-2 sm:grid-cols-2">
+          <div className="grid gap-3 sm:grid-cols-2">
             <ModeOption
               selected={scheduled}
               onSelect={() => setRevealMode('scheduled')}
-              title="Terjadwal"
-              detail="Terbuka sendiri di waktu yang kamu tentukan."
+              title={t.newEvent.modeScheduled}
+              detail={t.newEvent.modeScheduledDetail}
             />
             <ModeOption
               selected={revealMode === 'manual'}
               onSelect={() => setRevealMode('manual')}
-              title="Manual"
-              detail="Kamu yang menekan tombol buka, kapan pun."
+              title={t.newEvent.modeManual}
+              detail={t.newEvent.modeManualDetail}
             />
           </div>
 
           {scheduled ? (
             <div className="grid gap-2">
-              <Label htmlFor="reveal_at_picker">Waktu reveal</Label>
+              <Label htmlFor="reveal_at_picker">{t.newEvent.revealTimeLabel}</Label>
               <DateTimePicker
                 id="reveal_at_picker"
                 value={revealAt}
                 onChange={setRevealAt}
                 disabled={pending}
               />
-              <p className="text-xs text-muted-foreground">
-                Mengikuti zona waktu perangkat ini.
-              </p>
+              <p className="text-xs text-muted-foreground">{t.newEvent.timezoneNote}</p>
               {revealInPast ? (
-                <p className="text-xs text-destructive">
-                  Waktu reveal sudah lewat. Pilih waktu di masa depan.
-                </p>
+                <p className="text-xs text-destructive">{t.newEvent.pastWarning}</p>
               ) : null}
             </div>
           ) : null}
         </CardContent>
       </Card>
 
-      {state.error ? <p className="text-sm text-destructive">{state.error}</p> : null}
+      {error ? <p className="text-sm text-destructive">{error}</p> : null}
 
       <div>
         <Button type="submit" size="lg" disabled={pending || revealInvalid}>
-          {pending ? 'Membuat…' : 'Buat acara & ambil QR'}
+          {pending ? t.newEvent.submitting : t.newEvent.submit}
         </Button>
       </div>
     </form>

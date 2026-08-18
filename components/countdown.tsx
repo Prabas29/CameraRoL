@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 
+import { useT } from '@/components/i18n-provider'
 import { splitDuration } from '@/lib/reveal'
 
 /**
@@ -19,6 +20,7 @@ export function Countdown({
   onComplete?: () => void
   className?: string
 }) {
+  const t = useT()
   const target = new Date(targetIso).getTime()
   const [remaining, setRemaining] = useState(() => Math.max(0, target - Date.now()))
 
@@ -42,14 +44,14 @@ export function Countdown({
   const { days, hours, minutes, seconds } = splitDuration(remaining)
   const units = days > 0
     ? [
-        { value: days, label: 'hari' },
-        { value: hours, label: 'jam' },
-        { value: minutes, label: 'menit' },
+        { value: days, label: t.countdown.days },
+        { value: hours, label: t.countdown.hours },
+        { value: minutes, label: t.countdown.minutes },
       ]
     : [
-        { value: hours, label: 'jam' },
-        { value: minutes, label: 'menit' },
-        { value: seconds, label: 'detik' },
+        { value: hours, label: t.countdown.hours },
+        { value: minutes, label: t.countdown.minutes },
+        { value: seconds, label: t.countdown.seconds },
       ]
 
   return (

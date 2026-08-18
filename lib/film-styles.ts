@@ -4,8 +4,6 @@ export type { FilmStyle }
 
 export interface FilmStyleDef {
   id: FilmStyle
-  label: string
-  description: string
   /**
    * String filter yang dipakai apa adanya di DUA tempat:
    *   1. CSS `filter` pada <video> untuk live preview
@@ -19,27 +17,26 @@ export interface FilmStyleDef {
   vignetteStrength: number
 }
 
+/**
+ * Hanya bagian teknisnya yang tinggal di sini. Label dan deskripsi pindah ke
+ * kamus bahasa (`t.filmStyles`), karena keduanya teks tampilan — sementara
+ * `cssFilter` dan angka grain/vignette sama di bahasa mana pun.
+ */
 export const FILM_STYLES: Record<FilmStyle, FilmStyleDef> = {
   vintage: {
     id: 'vintage',
-    label: 'Vintage',
-    description: 'Hangat, sedikit pudar, seperti film 35mm yang kelamaan di laci.',
     cssFilter: 'sepia(0.3) saturate(1.4) contrast(1.1) brightness(1.05)',
     grainOpacity: 0.1,
     vignetteStrength: 0.35,
   },
   original: {
     id: 'original',
-    label: 'Original',
-    description: 'Warna apa adanya, cuma dinaikkan kontrasnya sedikit.',
     cssFilter: 'contrast(1.05) saturate(1.05)',
     grainOpacity: 0.03,
     vignetteStrength: 0.12,
   },
   bw: {
     id: 'bw',
-    label: 'Black & White',
-    description: 'Hitam putih berkontras tinggi dengan butiran kasar.',
     cssFilter: 'grayscale(1) contrast(1.2)',
     grainOpacity: 0.13,
     vignetteStrength: 0.3,

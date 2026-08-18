@@ -5,6 +5,7 @@ import { useState, useTransition } from 'react'
 import { toast } from 'sonner'
 
 import { deletePhoto } from '@/app/dashboard/actions'
+import { useT } from '@/components/i18n-provider'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -23,6 +24,7 @@ export function HostPhotoGrid({
   eventId: string
   photos: GalleryPhoto[]
 }) {
+  const t = useT()
   const router = useRouter()
   const [pending, startTransition] = useTransition()
   const [target, setTarget] = useState<GalleryPhoto | null>(null)
@@ -30,7 +32,7 @@ export function HostPhotoGrid({
   if (photos.length === 0) {
     return (
       <p className="rounded-2xl border border-dashed p-6 text-center text-sm text-muted-foreground">
-        Belum ada foto masuk. Foto akan muncul di sini begitu tamu mulai memotret.
+        {t.eventDetail.photosEmpty}
       </p>
     )
   }
@@ -43,10 +45,10 @@ export function HostPhotoGrid({
       const result = await deletePhoto(eventId, photoId)
       setTarget(null)
       if (result.error) {
-        toast.error(result.error)
+        toast.error(t.newEvent.errors.createFailed)
         return
       }
-      toast.success('Foto dihapus')
+      toast.success(t.eventDetail.deletedToast)
       router.refresh()
     })
   }
@@ -59,7 +61,7 @@ export function HostPhotoGrid({
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={photo.thumbUrl}
-              alt={`Foto oleh ${photo.guestName}`}
+              alt={t.eventDetail.photoBy(photo.guestName)}
               className="aspect-square w-full object-cover"
               loading="lazy"
               decoding="async"
@@ -77,7 +79,7 @@ export function HostPhotoGrid({
               onClick={() => setTarget(photo)}
               className="absolute right-2 top-2 opacity-0 transition-opacity focus-visible:opacity-100 group-hover:opacity-100"
             >
-              Hapus
+              {t.eventDetail.deletePhoto}
             </Button>
           </figure>
         ))}
@@ -86,18 +88,17 @@ export function HostPhotoGrid({
       <Dialog open={target !== null} onOpenChange={(open) => !open && setTarget(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Hapus foto ini?</DialogTitle>
+            <DialogTitle>{t.eventDetail.deleteTitle}</DialogTitle>
             <DialogDescription>
-              Foto tidak akan muncul di gallery tamu. File aslinya tetap tersimpan di storage,
-              jadi masih bisa dipulihkan lewat database kalau salah hapus.
+              {t.eventDetail.deleteDesc}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="ghost" onClick={() => setTarget(null)} disabled={pending}>
-              Batal
+              {t.common.cancel}
             </Button>
             <Button variant="destructive" onClick={handleDelete} disabled={pending}>
-              {pending ? 'Menghapus…' : 'Hapus'}
+              {pending ? t.eventDetail.deleting : t.eventDetail.deletePhoto}
             </Button>
           </DialogFooter>
         </DialogContent>

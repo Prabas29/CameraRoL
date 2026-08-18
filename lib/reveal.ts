@@ -38,11 +38,14 @@ export function splitDuration(ms: number): CountdownParts {
   }
 }
 
-const dateFormatter = new Intl.DateTimeFormat('id-ID', {
-  dateStyle: 'long',
-  timeStyle: 'short',
-})
-
-export function formatRevealTime(iso: string): string {
-  return dateFormatter.format(new Date(iso))
+/**
+ * Format tanggal mengikuti bahasa aktif — bukan sekadar penerjemahan nama
+ * bulan, tapi juga urutannya: "18 Agustus 2026 pukul 19.00" versus
+ * "August 18, 2026 at 7:00 PM".
+ */
+export function formatRevealTime(iso: string, locale: string = 'id'): string {
+  return new Intl.DateTimeFormat(locale === 'en' ? 'en-GB' : 'id-ID', {
+    dateStyle: 'long',
+    timeStyle: 'short',
+  }).format(new Date(iso))
 }

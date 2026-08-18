@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { siteUrl } from '@/lib/env'
+import { getI18n } from '@/lib/i18n/server'
 import { signPhotoUrls } from '@/lib/photos'
 import { isRevealed } from '@/lib/reveal'
 import { createClient } from '@/lib/supabase/server'
@@ -22,6 +23,7 @@ export default async function EventDetailPage({ params, searchParams }: PageProp
   const { eventId } = await params
   const { created } = await searchParams
 
+  const { t } = await getI18n()
   const supabase = await createClient()
 
   // RLS: query ini hanya mengembalikan baris kalau host yang login memang pemilik event.
@@ -63,7 +65,7 @@ export default async function EventDetailPage({ params, searchParams }: PageProp
     return [
       {
         id: photo.id,
-        guestName: guestNames.get(photo.guest_id) ?? 'Tamu',
+        guestName: guestNames.get(photo.guest_id) ?? t.common.guest,
         createdAt: photo.created_at,
         url,
         thumbUrl: (photo.thumb_storage_path && signedUrls.get(photo.thumb_storage_path)) || url,
@@ -79,19 +81,19 @@ export default async function EventDetailPage({ params, searchParams }: PageProp
     <div className="grid gap-10">
       <div className="grid gap-2">
         <Link href="/dashboard" className="text-sm text-muted-foreground hover:text-foreground">
-          ← Semua acara
+          ← {t.eventDetail.allEvents}
         </Link>
 
         <div className="flex flex-wrap items-center gap-3">
           <h1 className="text-2xl font-semibold tracking-tight">{event.name}</h1>
           <Badge variant={revealed ? 'default' : 'secondary'}>
-            {revealed ? 'Terbuka' : 'Terkunci'}
+            {revealed ? t.dashboard.revealed : t.dashboard.locked}
           </Badge>
         </div>
 
         {created ? (
           <p className="text-sm text-primary">
-            Acara dibuat. Bagikan QR di bawah ke tamu-tamumu.
+            {t.eventDetail.created}
           </p>
         ) : null}
       </div>
@@ -99,10 +101,10 @@ export default async function EventDetailPage({ params, searchParams }: PageProp
       <SharePanel joinUrl={joinUrl} eventName={event.name} />
 
       <div className="grid gap-3 sm:grid-cols-3">
-        <StatCard label="Tamu bergabung" value={guestList.length} />
-        <StatCard label="Foto masuk" value={photoList.length} />
+        <StatCard label={t.eventDetail.statGuests} value={guestList.length} />
+        <StatCard label={t.eventDetail.statPhotos} value={photoList.length} />
         <StatCard
-          label="Rata-rata per tamu"
+          label={t.eventDetail.statAvg}
           value={guestList.length ? Math.round((photoList.length / guestList.length) * 10) / 10 : 0}
         />
       </div>
@@ -111,10 +113,10 @@ export default async function EventDetailPage({ params, searchParams }: PageProp
 
       <Card>
         <CardHeader className="flex-row items-center justify-between gap-4 space-y-0">
-          <CardTitle className="text-base">Foto masuk ({photos.length})</CardTitle>
+          <CardTitle className="text-base">{t.eventDetail.photosTitle(photos.length)}</CardTitle>
           {revealed ? (
             <Button asChild size="sm" variant="secondary">
-              <Link href={`/e/${event.id}/gallery`}>Lihat gallery tamu</Link>
+              <Link href={`/e/${event.id}/gallery`}>{t.eventDetail.viewGallery}</Link>
             </Button>
           ) : null}
         </CardHeader>

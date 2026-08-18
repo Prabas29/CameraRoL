@@ -4,6 +4,7 @@ import { STORAGE_BUCKET } from '@/lib/env'
 import { getPublicEvent, isUuid } from '@/lib/events'
 import { getGuest } from '@/lib/guest-session'
 import { filteredPath, originalPath, thumbPath } from '@/lib/photos'
+import { getT } from '@/lib/i18n/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import type { Database } from '@/types/database'
 
@@ -26,28 +27,29 @@ export async function POST(
   { params }: { params: Promise<{ eventId: string }> },
 ) {
   const { eventId } = await params
+  const t = await getT()
 
   if (!isUuid(eventId)) {
-    return NextResponse.json({ error: 'Acara tidak ditemukan.' }, { status: 404 })
+    return NextResponse.json({ error: t.api.eventNotFound }, { status: 404 })
   }
 
   const event = await getPublicEvent(eventId)
   if (!event) {
-    return NextResponse.json({ error: 'Acara tidak ditemukan.' }, { status: 404 })
+    return NextResponse.json({ error: t.api.eventNotFound }, { status: 404 })
   }
 
   // Identitas diambil dari cookie httpOnly, bukan dari body — browser tidak bisa
   // mengaku-ngaku jadi tamu lain.
   const guest = await getGuest(eventId)
   if (!guest) {
-    return NextResponse.json({ error: 'Kamu belum bergabung ke acara ini.' }, { status: 401 })
+    return NextResponse.json({ error: t.api.notJoined }, { status: 401 })
   }
 
   let formData: FormData
   try {
     formData = await request.formData()
   } catch {
-    return NextResponse.json({ error: 'Permintaan tidak valid.' }, { status: 400 })
+    return NextResponse.json({ error: t.api.invalidRequest }, { status: 400 })
   }
 
   const original = formData.get('original')
@@ -55,13 +57,13 @@ export async function POST(
   const thumbnail = formData.get('thumbnail')
 
   if (!(original instanceof File) || !(filtered instanceof File)) {
-    return NextResponse.json({ error: 'Foto tidak lengkap.' }, { status: 400 })
+    return NextResponse.json({ error: t.api.photoIncomplete }, { status: 400 })
   }
   if (original.size === 0 || filtered.size === 0) {
-    return NextResponse.json({ error: 'Foto kosong.' }, { status: 400 })
+    return NextResponse.json({ error: t.api.photoEmpty }, { status: 400 })
   }
   if (original.size > MAX_BYTES || filtered.size > MAX_BYTES) {
-    return NextResponse.json({ error: 'Foto terlalu besar.' }, { status: 413 })
+    return NextResponse.json({ error: t.api.photoTooLarge }, { status: 413 })
   }
 
   const hasThumb = thumbnail instanceof File && thumbnail.size > 0
@@ -88,7 +90,7 @@ export async function POST(
   if (failed) {
     // Bersihkan file yang sempat naik supaya tidak ada sampah tanpa baris DB.
     await admin.storage.from(STORAGE_BUCKET).remove(allKeys)
-    return NextResponse.json({ error: 'Gagal mengunggah foto.' }, { status: 502 })
+    return NextResponse.json({ error: t.api.uploadFailed }, { status: 502 })
   }
 
   const baseRow: PhotoInsert = {
@@ -119,7 +121,7 @@ export async function POST(
 
   if (insertError) {
     await admin.storage.from(STORAGE_BUCKET).remove(allKeys)
-    return NextResponse.json({ error: 'Gagal menyimpan foto.' }, { status: 500 })
+    return NextResponse.json({ error: t.api.saveFailed }, { status: 500 })
   }
 
   return NextResponse.json({ id: photoId }, { status: 201 })
