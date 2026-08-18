@@ -37,6 +37,27 @@ function describeError(error: unknown, copy: CameraErrorCopy): CameraError {
   return { title: copy.genericTitle, detail: copy.genericDetail }
 }
 
+/**
+ * Memberi nama pendek pada tiap modul kamera.
+ *
+ * Label dari `enumerateDevices()` tidak seragam antar perangkat: Android sering
+ * menulis "camera2 0, facing back", iOS menulis "Back Ultra Wide Camera",
+ * sebagian browser hanya memberi string kosong sebelum izin diberikan. Karena
+ * itu labelnya dicocokkan dengan kata kunci, dan kalau tidak dikenali jatuh ke
+ * penomoran biasa supaya tombolnya tetap bisa dibedakan.
+ */
+function lensLabel(device: MediaDeviceInfo, index: number, t: Dictionary): string {
+  const label = device.label.toLowerCase()
+
+  if (label.includes('ultra')) return t.camera.lensUltraWide
+  if (label.includes('tele')) return t.camera.lensTele
+  if (label.includes('front') || label.includes('user')) return t.camera.lensFront
+  if (label.includes('wide')) return t.camera.lensWide
+  if (label.includes('back') || label.includes('environment')) return t.camera.lensBack
+
+  return t.camera.lensNumbered(index + 1)
+}
+
 export function CameraCapture({
   eventId,
   eventName,
@@ -55,13 +76,14 @@ export function CameraCapture({
   const [state, setState] = useState<CameraState>('starting')
   const [error, setError] = useState<CameraError | null>(null)
   const [facingMode, setFacingMode] = useState<FacingMode>('environment')
+  const [deviceId, setDeviceId] = useState<string | null>(null)
+  const [devices, setDevices] = useState<MediaDeviceInfo[]>([])
+  const [mirrored, setMirrored] = useState(false)
   const [portrait, setPortrait] = useState(true)
   const [busy, setBusy] = useState(false)
   const [flashing, setFlashing] = useState(false)
   const [shotCount, setShotCount] = useState(0)
   const [lastShot, setLastShot] = useState<string | null>(null)
-
-  const mirrored = facingMode === 'user'
 
   const stopStream = useCallback(() => {
     streamRef.current?.getTracks().forEach((track) => track.stop())
@@ -99,7 +121,16 @@ export function CameraCapture({
 
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode, width: { ideal: 1920 }, height: { ideal: 1920 } },
+          video: {
+            // Kalau modul tertentu dipilih, `deviceId` yang menentukan dan
+            // `facingMode` justru harus absen: dua-duanya bisa saling
+            // bertentangan dan membuat constraint gagal.
+            ...(deviceId ? { deviceId: { exact: deviceId } } : { facingMode }),
+            // Ideal, bukan exact: browser memilih mode terdekat yang tersedia
+            // dan tidak gagal kalau perangkatnya tidak sanggup.
+            width: { ideal: 3840 },
+            height: { ideal: 2160 },
+          },
           audio: false,
         })
 
@@ -109,12 +140,24 @@ export function CameraCapture({
         }
 
         streamRef.current = stream
+
+        // Cermin ditentukan dari track yang benar-benar aktif, bukan dari
+        // tebakan kita. Saat modul dipilih lewat deviceId, state facingMode
+        // tidak lagi mencerminkan kamera mana yang menyala.
+        const settings = stream.getVideoTracks()[0]?.getSettings()
+        setMirrored(settings?.facingMode === 'user')
+
         const video = videoRef.current
         if (video) {
           video.srcObject = stream
           await video.play().catch(() => undefined)
         }
         setState('ready')
+
+        // Baru dipanggil setelah izin diberikan: sebelum itu label perangkat
+        // dikosongkan browser demi privasi, sehingga daftarnya tidak berguna.
+        const all = await navigator.mediaDevices.enumerateDevices()
+        if (!cancelled) setDevices(all.filter((d) => d.kind === 'videoinput'))
       } catch (caught) {
         if (cancelled) return
         setError(describeError(caught, copy))
@@ -128,7 +171,7 @@ export function CameraCapture({
       cancelled = true
       stopStream()
     }
-  }, [facingMode, stopStream])
+  }, [facingMode, deviceId, stopStream])
 
   async function handleShutter() {
     const video = videoRef.current
@@ -168,6 +211,20 @@ export function CameraCapture({
       setBusy(false)
     }
   }
+
+  function flipCamera() {
+    // Balik ke pemilihan berbasis facingMode; deviceId dilepas supaya tidak
+    // mengunci kamera lama.
+    setDeviceId(null)
+    setFacingMode((mode) => (mode === 'environment' ? 'user' : 'environment'))
+  }
+
+  const activeDeviceId =
+    deviceId ?? streamRef.current?.getVideoTracks()[0]?.getSettings().deviceId ?? null
+
+  // Satu kamera depan + satu belakang sudah tertangani tombol balik; daftar
+  // modul baru berguna kalau perangkatnya benar-benar punya lebih dari itu.
+  const showLensPicker = devices.length > 2
 
   return (
     <div className="flex min-h-svh flex-col bg-black">
@@ -267,7 +324,35 @@ export function CameraCapture({
         </div>
       </div>
 
-      <footer className="grid gap-4 px-6 pb-8 pt-6">
+      <footer className="grid gap-4 px-6 pb-8 pt-5">
+        {showLensPicker ? (
+          <div
+            role="group"
+            aria-label={t.camera.chooseCamera}
+            className="mx-auto flex max-w-full gap-1 overflow-x-auto rounded-full bg-white/10 p-1"
+          >
+            {devices.map((device, index) => {
+              const active = device.deviceId === activeDeviceId
+
+              return (
+                <button
+                  key={device.deviceId || index}
+                  type="button"
+                  onClick={() => setDeviceId(device.deviceId)}
+                  disabled={state !== 'ready' || busy}
+                  aria-pressed={active}
+                  className={cn(
+                    'shrink-0 rounded-full px-3.5 py-1.5 text-xs font-medium transition-colors disabled:opacity-40',
+                    active ? 'bg-white text-black' : 'text-white/70 hover:text-white',
+                  )}
+                >
+                  {lensLabel(device, index, t)}
+                </button>
+              )
+            })}
+          </div>
+        ) : null}
+
         <div className="flex items-center justify-center gap-8">
           <Button
             type="button"
@@ -275,7 +360,7 @@ export function CameraCapture({
             size="icon"
             aria-label={t.camera.switchCamera}
             disabled={state !== 'ready' || busy}
-            onClick={() => setFacingMode((mode) => (mode === 'environment' ? 'user' : 'environment'))}
+            onClick={flipCamera}
             className="text-white hover:bg-white/10 hover:text-white"
           >
             <RefreshCwIcon className="size-5" />
