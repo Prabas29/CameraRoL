@@ -23,14 +23,36 @@ export type PublicEvent = Pick<
  * payload halaman.
  */
 export async function getPublicEvent(eventId: string): Promise<PublicEvent | null> {
-  if (!isUuid(eventId)) return null
+  if (!isUuid(eventId)) {
+    console.warn(`[rol] getPublicEvent: "${eventId}" bukan UUID yang valid`)
+    return null
+  }
 
   const admin = createAdminClient()
-  const { data } = await admin
+  const { data, error } = await admin
     .from('events')
     .select('id, name, film_style, reveal_mode, reveal_at, is_revealed')
     .eq('id', eventId)
     .maybeSingle()
 
-  return data ?? null
+  if (error) {
+    console.error(`[rol] getPublicEvent(${eventId}) gagal:`, error.message, error)
+    return null
+  }
+
+  if (!data) {
+    // Nol baris TANPA error hampir selalu berarti query dijalankan sebagai anon,
+    // bukan service_role: RLS memblokir semuanya dan PostgREST membalas 200 []
+    // dengan tenang. Karena itu pesan ini menyebut dugaannya secara eksplisit —
+    // kalau tidak, gejalanya tidak bisa dibedakan dari event yang memang tidak ada.
+    console.warn(
+      `[rol] getPublicEvent(${eventId}): nol baris tanpa error. ` +
+        `Kalau event ini yakin ada, periksa SUPABASE_SERVICE_ROLE_KEY — ` +
+        `nilainya harus key "sb_secret_..." (service_role), bukan "sb_publishable_..." (anon). ` +
+        `Key anon akan selalu mengembalikan nol baris karena RLS.`,
+    )
+    return null
+  }
+
+  return data
 }

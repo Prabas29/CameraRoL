@@ -31,19 +31,30 @@ export async function getRevealedPhotos(event: PublicEventLike): Promise<Gallery
 
   const admin = createAdminClient()
 
-  const { data: rows } = await admin
+  const { data: rows, error: photosError } = await admin
     .from('photos')
     .select('id, guest_id, filtered_storage_path, created_at')
     .eq('event_id', event.id)
     .eq('is_deleted', false)
     .order('created_at', { ascending: true })
 
+  if (photosError) {
+    console.error(`[rol] getRevealedPhotos(${event.id}) gagal:`, photosError.message, photosError)
+    return []
+  }
+
   if (!rows || rows.length === 0) return []
 
-  const { data: guests } = await admin
+  const { data: guests, error: guestsError } = await admin
     .from('guests')
     .select('id, name')
     .eq('event_id', event.id)
+
+  if (guestsError) {
+    // Bukan alasan menggagalkan gallery — foto tetap tampil, namanya saja yang
+    // jatuh ke default "Tamu".
+    console.error(`[rol] gagal membaca nama tamu (${event.id}):`, guestsError.message)
+  }
 
   const guestNames = new Map((guests ?? []).map((guest) => [guest.id, guest.name]))
   const signedUrls = await signPhotoUrls(rows.map((row) => row.filtered_storage_path))

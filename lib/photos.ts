@@ -33,7 +33,10 @@ export async function signPhotoUrls(
     .from(STORAGE_BUCKET)
     .createSignedUrls(paths, expiresIn)
 
-  if (error || !data) return result
+  if (error || !data) {
+    console.error('[rol] signPhotoUrls gagal:', error?.message ?? 'tanpa data', error)
+    return result
+  }
 
   for (const entry of data) {
     if (entry.signedUrl && entry.path) {

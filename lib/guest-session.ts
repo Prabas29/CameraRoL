@@ -35,12 +35,17 @@ export async function getGuest(eventId: string): Promise<GuestRow | null> {
   if (!guestId) return null
 
   const admin = createAdminClient()
-  const { data } = await admin
+  const { data, error } = await admin
     .from('guests')
     .select('*')
     .eq('id', guestId)
     .eq('event_id', eventId)
     .maybeSingle()
+
+  if (error) {
+    console.error(`[rol] getGuest(${eventId}) gagal:`, error.message, error)
+    return null
+  }
 
   return data ?? null
 }
