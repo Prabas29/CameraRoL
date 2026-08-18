@@ -43,11 +43,11 @@ export async function getPublicEvent(eventId: string): Promise<PublicEvent | nul
   if (!data) {
     // Nol baris TANPA error hampir selalu berarti query dijalankan sebagai anon,
     // bukan service_role: RLS memblokir semuanya dan PostgREST membalas 200 []
-    // dengan tenang. Karena itu pesan ini menyebut dugaannya secara eksplisit —
+    // dengan tenang. Karena itu pesan ini menyebut dugaannya secara eksplisit,
     // kalau tidak, gejalanya tidak bisa dibedakan dari event yang memang tidak ada.
     console.warn(
       `[rol] getPublicEvent(${eventId}): nol baris tanpa error. ` +
-        `Kalau event ini yakin ada, periksa SUPABASE_SERVICE_ROLE_KEY — ` +
+        `Kalau event ini yakin ada, periksa SUPABASE_SERVICE_ROLE_KEY, ` +
         `nilainya harus key "sb_secret_..." (service_role), bukan "sb_publishable_..." (anon). ` +
         `Key anon akan selalu mengembalikan nol baris karena RLS.`,
     )

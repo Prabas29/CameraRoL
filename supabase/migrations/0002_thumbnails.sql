@@ -6,7 +6,7 @@
 -- terunduh hanya untuk menampilkan petak-petak kecil.
 --
 -- Solusinya menambah versi kecil yang dibuat di browser saat capture. Versi
--- penuh dan file mentah tidak disentuh sama sekali — lightbox dan unduhan
+-- penuh dan file mentah tidak disentuh sama sekali, lightbox dan unduhan
 -- tetap memakai kualitas asli.
 --
 -- Nullable karena foto yang sudah terlanjur ada tidak punya thumbnail;
@@ -17,4 +17,4 @@ alter table public.photos
   add column if not exists thumb_storage_path text;
 
 comment on column public.photos.thumb_storage_path is
-  'Versi kecil untuk grid. NULL untuk foto sebelum migration 0002 — pemanggil harus jatuh ke filtered_storage_path.';
+  'Versi kecil untuk grid. NULL untuk foto sebelum migration 0002, pemanggil harus jatuh ke filtered_storage_path.';

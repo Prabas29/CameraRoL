@@ -9,7 +9,7 @@ import type { GuestRow } from '@/types/database'
  * Identitas tamu disimpan di cookie httpOnly per event, berisi id baris `guests`.
  *
  * Cookie-nya httpOnly supaya tidak bisa dibaca/ditulis JavaScript di halaman.
- * Ini bukan mekanisme anti-pemalsuan — siapa pun memang boleh jadi tamu — tapi
+ * Ini bukan mekanisme anti-pemalsuan, siapa pun memang boleh jadi tamu, tapi
  * membuat server punya satu sumber identitas yang konsisten untuk mengaitkan
  * foto ke nama, tanpa mempercayai apa pun yang dikirim dari browser.
  */

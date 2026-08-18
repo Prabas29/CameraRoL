@@ -23,23 +23,23 @@ const id = {
   },
 
   meta: {
-    homeTitle: 'CameraRol — kamera sekali pakai untuk acaramu',
+    homeTitle: 'CameraRol: kamera sekali pakai untuk acaramu',
     homeDescription:
       'Bagikan satu QR ke semua tamu. Mereka memotret, hasilnya terkunci, dan semuanya terbuka bersamaan saat acara usai.',
-    login: 'Masuk — CameraRol',
-    dashboard: 'Acara saya — CameraRol',
-    newEvent: 'Buat acara — CameraRol',
-    join: 'Gabung — CameraRol',
-    camera: 'Kamera — CameraRol',
-    locked: 'Menunggu reveal — CameraRol',
-    gallery: 'Album — CameraRol',
+    login: 'Masuk | CameraRol',
+    dashboard: 'Acara saya | CameraRol',
+    newEvent: 'Buat acara | CameraRol',
+    join: 'Gabung | CameraRol',
+    camera: 'Kamera | CameraRol',
+    locked: 'Menunggu reveal | CameraRol',
+    gallery: 'Album | CameraRol',
   },
 
   landing: {
     signIn: 'Masuk sebagai host',
     title: 'Kamera sekali pakai, versi digital, untuk acaramu.',
     subtitle:
-      'Tamu memotret sepuasnya lewat browser. Hasilnya terkunci sampai acara usai — lalu terbuka serentak jadi satu album bersama.',
+      'Tamu memotret sepuasnya lewat browser. Hasilnya terkunci sampai acara usai, lalu terbuka serentak jadi satu album bersama.',
     cta: 'Mulai buat acara',
     steps: [
       { title: 'Buat acara', detail: 'Beri nama, pilih film style, tentukan kapan foto boleh dibuka.' },
@@ -50,7 +50,7 @@ const id = {
 
   login: {
     title: 'Selamat datang di CameraRol',
-    subtitle: 'Buat acara, bagikan momen — seperti kamera sekali pakai, tapi digital.',
+    subtitle: 'Buat acara dan bagikan momen, seperti kamera sekali pakai tapi digital.',
     google: 'Lanjutkan dengan Google',
     googleLoading: 'Menghubungkan…',
     withEmail: 'Masuk dengan Email',
@@ -62,7 +62,7 @@ const id = {
     sentBodyBefore: 'Link masuk sudah dikirim ke ',
     sentBodyAfter: '. Buka link itu di perangkat ini untuk melanjutkan.',
     hostOnly:
-      'Login hanya untuk host. Tamu tidak perlu akun — cukup buka link atau scan QR yang kamu bagikan.',
+      'Login hanya untuk host. Tamu tidak perlu akun, cukup buka link atau scan QR yang kamu bagikan.',
     backHome: 'Kembali ke halaman utama',
     errors: {
       missing_code: 'Link tidak lengkap. Coba masuk sekali lagi.',
@@ -102,7 +102,7 @@ const id = {
     filmDesc: 'Semua foto di acara ini pakai tampilan yang sama. Bisa diganti nanti.',
     revealTitle: 'Kapan foto dibuka',
     revealDesc:
-      'Sebelum waktu ini, tamu tidak bisa melihat foto siapa pun — termasuk fotonya sendiri.',
+      'Sebelum waktu ini, tamu tidak bisa melihat foto siapa pun, termasuk fotonya sendiri.',
     modeScheduled: 'Terjadwal',
     modeScheduledDetail: 'Terbuka sendiri di waktu yang kamu tentukan.',
     modeManual: 'Manual',
@@ -149,7 +149,7 @@ const id = {
     statusRevealed: 'Semua tamu sudah bisa melihat dan mengunduh foto.',
     statusLocked: 'Foto tersimpan aman dan belum bisa dilihat siapa pun kecuali kamu.',
     autoOpenAt: (time: string) => `Terbuka otomatis ${time}`,
-    manualNote: 'Acara ini mode manual — foto terbuka begitu kamu menekan tombol di bawah.',
+    manualNote: 'Acara ini mode manual. Foto terbuka begitu kamu menekan tombol di bawah.',
     openNow: 'Buka foto sekarang',
     confirmTitle: 'Buka foto sekarang?',
     confirmDesc:
@@ -158,7 +158,7 @@ const id = {
     opening: 'Membuka…',
     filmTitle: 'Film style',
     filmDesc:
-      'Berlaku untuk foto yang diambil setelah ini. Foto lama tetap memakai style saat dipotret — file mentahnya tersimpan, jadi bisa dirender ulang nanti.',
+      'Berlaku untuk foto yang diambil setelah ini. Foto lama tetap memakai style saat dipotret. File mentahnya tersimpan, jadi bisa dirender ulang nanti.',
     photosTitle: (n: number) => `Foto masuk (${n})`,
     viewGallery: 'Lihat gallery tamu',
     photosEmpty: 'Belum ada foto masuk. Foto akan muncul di sini begitu tamu mulai memotret.',
@@ -184,7 +184,7 @@ const id = {
     starting: 'Menyiapkan kamera…',
     connectError: 'Tidak bisa terhubung. Cek koneksimu, lalu coba lagi.',
     joinFailed: 'Gagal bergabung. Coba lagi.',
-    noteRevealed: 'Album acara ini sudah dibuka — foto barumu akan langsung terlihat semua orang.',
+    noteRevealed: 'Album acara ini sudah dibuka. Foto barumu akan langsung terlihat semua orang.',
     noteScheduled: (time: string) => `Semua foto terkunci sampai ${time}, lalu terbuka serentak.`,
     noteManual: 'Semua foto terkunci sampai host membukanya, lalu terbuka serentak.',
   },
@@ -228,7 +228,7 @@ const id = {
       `Semua foto dari semua tamu terbuka serentak pada ${time}.`,
     opensManual:
       'Semua foto dari semua tamu terbuka serentak begitu host menekan tombol buka.',
-    untilThen: 'Sampai saat itu belum ada yang bisa melihatnya — termasuk kamu.',
+    untilThen: 'Sampai saat itu belum ada yang bisa melihatnya, termasuk kamu.',
     continueShooting: 'Lanjut memotret',
     joinAndShoot: 'Gabung & mulai memotret',
   },
@@ -298,23 +298,23 @@ const en = {
   },
 
   meta: {
-    homeTitle: 'CameraRol — a disposable camera for your event',
+    homeTitle: 'CameraRol: a disposable camera for your event',
     homeDescription:
       'Share one QR code with every guest. They shoot, the photos stay locked, and everything opens together when the event ends.',
-    login: 'Sign in — CameraRol',
-    dashboard: 'My events — CameraRol',
-    newEvent: 'New event — CameraRol',
-    join: 'Join — CameraRol',
-    camera: 'Camera — CameraRol',
-    locked: 'Waiting for reveal — CameraRol',
-    gallery: 'Album — CameraRol',
+    login: 'Sign in | CameraRol',
+    dashboard: 'My events | CameraRol',
+    newEvent: 'New event | CameraRol',
+    join: 'Join | CameraRol',
+    camera: 'Camera | CameraRol',
+    locked: 'Waiting for reveal | CameraRol',
+    gallery: 'Album | CameraRol',
   },
 
   landing: {
     signIn: 'Sign in as host',
     title: 'A disposable camera, reimagined, for your event.',
     subtitle:
-      'Guests shoot freely from their browser. Photos stay locked until the event ends — then open all at once as one shared album.',
+      'Guests shoot freely from their browser. Photos stay locked until the event ends, then open all at once as one shared album.',
     cta: 'Create your event',
     steps: [
       { title: 'Create an event', detail: 'Name it, pick a film style, decide when photos may open.' },
@@ -325,7 +325,7 @@ const en = {
 
   login: {
     title: 'Welcome to CameraRol',
-    subtitle: 'Create an event, share the moment — like a disposable camera, but digital.',
+    subtitle: 'Create an event and share the moment, like a disposable camera but digital.',
     google: 'Continue with Google',
     googleLoading: 'Connecting…',
     withEmail: 'Sign in with Email',
@@ -337,7 +337,7 @@ const en = {
     sentBodyBefore: 'A sign-in link is on its way to ',
     sentBodyAfter: '. Open it on this device to continue.',
     hostOnly:
-      'Signing in is for hosts only. Guests need no account — they just open the link or scan the QR you share.',
+      'Signing in is for hosts only. Guests need no account. They just open the link or scan the QR you share.',
     backHome: 'Back to home',
     errors: {
       missing_code: 'That link was incomplete. Please try signing in again.',
@@ -376,7 +376,7 @@ const en = {
     filmTitle: 'Film style',
     filmDesc: 'Every photo in this event shares the same look. You can change it later.',
     revealTitle: 'When photos open',
-    revealDesc: 'Until then, no guest can see anyone’s photos — not even their own.',
+    revealDesc: 'Until then, no guest can see anyone’s photos, not even their own.',
     modeScheduled: 'Scheduled',
     modeScheduledDetail: 'Opens by itself at the time you choose.',
     modeManual: 'Manual',
@@ -423,7 +423,7 @@ const en = {
     statusRevealed: 'Every guest can now view and download the photos.',
     statusLocked: 'Photos are stored safely and nobody but you can see them yet.',
     autoOpenAt: (time: string) => `Opens automatically ${time}`,
-    manualNote: 'This event is manual — photos open the moment you press the button below.',
+    manualNote: 'This event is manual. Photos open the moment you press the button below.',
     openNow: 'Open photos now',
     confirmTitle: 'Open the photos now?',
     confirmDesc:
@@ -432,7 +432,7 @@ const en = {
     opening: 'Opening…',
     filmTitle: 'Film style',
     filmDesc:
-      'Applies to photos taken from now on. Older photos keep the style they were shot with — their raw files are stored, so they can be re-rendered later.',
+      'Applies to photos taken from now on. Older photos keep the style they were shot with. Their raw files are stored, so they can be re-rendered later.',
     photosTitle: (n: number) => `Photos in (${n})`,
     viewGallery: 'View guest gallery',
     photosEmpty: 'No photos yet. They will appear here as soon as guests start shooting.',
@@ -458,7 +458,7 @@ const en = {
     starting: 'Preparing camera…',
     connectError: 'Could not connect. Check your connection and try again.',
     joinFailed: 'Could not join. Please try again.',
-    noteRevealed: 'This album is already open — your new photos will be visible to everyone right away.',
+    noteRevealed: 'This album is already open. Your new photos will be visible to everyone right away.',
     noteScheduled: (time: string) => `All photos stay locked until ${time}, then open together.`,
     noteManual: 'All photos stay locked until the host opens them, then open together.',
   },
@@ -500,7 +500,7 @@ const en = {
     waitingManual: 'Waiting for the host to open the album. This page will open by itself when they do.',
     opensAt: (time: string) => `Every photo from every guest opens together on ${time}.`,
     opensManual: 'Every photo from every guest opens together the moment the host presses open.',
-    untilThen: 'Until then nobody can see them — not even you.',
+    untilThen: 'Until then nobody can see them, not even you.',
     continueShooting: 'Keep shooting',
     joinAndShoot: 'Join & start shooting',
   },

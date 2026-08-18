@@ -69,7 +69,7 @@ export function CameraCapture({
   }, [])
 
   // Kamus disimpan di ref, bukan jadi dependency efek. Kalau ikut jadi
-  // dependency, mengganti bahasa akan memasang ulang kamera di tengah sesi —
+  // dependency, mengganti bahasa akan memasang ulang kamera di tengah sesi,
   // dan di sebagian browser itu memunculkan permintaan izin lagi.
   const errorCopyRef = useRef(t.camera.errors)
   errorCopyRef.current = t.camera.errors
@@ -219,7 +219,7 @@ export function CameraCapture({
             style={{ filter: style.cssFilter }}
           />
 
-          {/* Grain & vignette preview — pendekatan CSS dari efek yang nanti
+          {/* Grain & vignette preview, pendekatan CSS dari efek yang nanti
               di-bake ke foto. Tidak identik piksel per piksel, tapi look-nya
               berasal dari angka yang sama di lib/film-styles.ts. */}
           <div

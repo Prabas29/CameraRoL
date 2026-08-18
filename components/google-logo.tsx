@@ -1,8 +1,8 @@
 /**
  * Logo "G" resmi Google.
  *
- * Warna dan proporsinya mengikuti pedoman brand Google dan TIDAK boleh diubah
- * — tidak diwarnai ulang mengikuti tema, tidak dijadikan monokrom, tidak
+ * Warna dan proporsinya mengikuti pedoman brand Google dan TIDAK boleh diubah:
+ * tidak diwarnai ulang mengikuti tema, tidak dijadikan monokrom, tidak
  * diregangkan. Karena itu keempat warnanya ditulis literal, bukan lewat token
  * tema seperti komponen lain di project ini.
  */

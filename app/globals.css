@@ -70,7 +70,7 @@
    mencapai kontras 3.0:1, di bawah ambang WCAG AA. Menurunkan amber-nya sampai
    putih lolos akan mengubahnya jadi cokelat tua dan menghilangkan karakter
    emasnya. Karena itu amber dipertahankan cerah dan teksnya near-black hangat
-   (#241A08) — kontras 5.9:1, lolos AA, dan terasa lebih editorial.
+   (#241A08), kontras 5.9:1, lolos AA, dan terasa lebih editorial.
    --------------------------------------------------------------------------- */
 :root {
   --background: #fafaf9;
@@ -84,7 +84,7 @@
   --primary: #c08a3e;
   --primary-foreground: #241a08;
 
-  /* #F2F2F7 — warna field & grouped background khas iOS */
+  /* #F2F2F7, warna field & grouped background khas iOS */
   --secondary: #f2f2f7;
   --secondary-foreground: #1c1c1e;
   --muted: #f2f2f7;

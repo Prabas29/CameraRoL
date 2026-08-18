@@ -12,7 +12,7 @@ import { cn } from '@/lib/utils'
  * Pemilih bahasa berbentuk segmented control ala iOS.
  *
  * Hanya dua bahasa, jadi menampilkan keduanya sekaligus lebih cepat dipakai
- * daripada dropdown — satu ketukan, bukan dua.
+ * daripada dropdown, satu ketukan, bukan dua.
  */
 export function LanguageSwitcher({ className }: { className?: string }) {
   const { locale, t } = useI18n()

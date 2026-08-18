@@ -3,7 +3,7 @@
 const DEVICE_ID_KEY = 'rol.device_id'
 
 /**
- * ID perangkat yang persist di localStorage. Ini "identitas" guest — tidak ada
+ * ID perangkat yang persist di localStorage. Ini "identitas" guest, tidak ada
  * login, jadi satu browser = satu guest. Sengaja bukan mekanisme keamanan:
  * fungsinya cuma supaya guest yang sama tidak dobel terdaftar dan foto bisa
  * dikaitkan ke nama yang benar.

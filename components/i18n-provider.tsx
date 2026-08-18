@@ -21,7 +21,7 @@ const I18nContext = createContext<I18nValue>({
  * di sini. Sebabnya teknis: banyak entri berupa fungsi (untuk plural dan
  * penyisipan nilai), dan fungsi tidak bisa diserialisasi melewati batas RSC.
  *
- * Konsekuensinya kedua bahasa ikut ter-bundle ke browser — sekitar 8 kB
+ * Konsekuensinya kedua bahasa ikut ter-bundle ke browser, sekitar 8 kB
  * ter-gzip. Itu harga yang wajar untuk API yang bisa menangani plural dengan
  * benar; alternatifnya adalah template string berplaceholder, yang tidak bisa
  * membedakan "1 photo" dari "2 photos".

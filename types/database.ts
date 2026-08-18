@@ -12,7 +12,7 @@ export type RevealMode = 'scheduled' | 'manual'
 /*
  * Catatan: baris-baris tabel di bawah sengaja memakai `type`, bukan `interface`.
  * postgrest-js membatasi bentuk skema dengan `Record<string, unknown>`, dan
- * interface tidak punya implicit index signature sehingga akan ditolak — efeknya
+ * interface tidak punya implicit index signature sehingga akan ditolak, efeknya
  * tipe insert/update jatuh jadi `never` tanpa pesan error yang jelas.
  */
 
@@ -60,12 +60,12 @@ export type EventStatsRow = {
 /** Cukup untuk menentukan status reveal sebuah event. */
 export type PublicEventLike = Pick<EventRow, 'id' | 'is_revealed' | 'reveal_at' | 'reveal_mode'>
 
-/** Bentuk yang dikirim ke client untuk gallery — sudah termasuk signed URL. */
+/** Bentuk yang dikirim ke client untuk gallery, sudah termasuk signed URL. */
 export interface GalleryPhoto {
   id: string
   guestName: string
   createdAt: string
-  /** Versi penuh — dipakai lightbox, unduhan satuan, dan ZIP. */
+  /** Versi penuh, dipakai lightbox, unduhan satuan, dan ZIP. */
   url: string
   /** Versi kecil untuk grid. Jatuh ke `url` kalau foto belum punya thumbnail. */
   thumbUrl: string

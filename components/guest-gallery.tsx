@@ -70,7 +70,7 @@ export function GuestGallery({
 
   /**
    * ZIP dirakit di browser, bukan di server. Signed URL Supabase mengirim
-   * `Access-Control-Allow-Origin: *` sehingga file bisa diambil langsung — dan
+   * `Access-Control-Allow-Origin: *` sehingga file bisa diambil langsung, dan
    * dengan begitu album ratusan foto tidak perlu melewati batas memori/waktu
    * fungsi serverless.
    */

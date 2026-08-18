@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase/server'
 /**
  * Tujuan redirect untuk KEDUA cara masuk: magic link dan OAuth Google.
  *
- * Penukaran kodenya sendiri memang sudah generic — `exchangeCodeForSession`
+ * Penukaran kodenya sendiri memang sudah generic, `exchangeCodeForSession`
  * menangani alur PKCE apa pun, tanpa perlu tahu providernya. Yang berbeda cuma
  * cara kegagalan dilaporkan: OAuth tidak mengirim `code`, melainkan `error` dan
  * `error_description` sebagai query param (misalnya saat pengguna menolak izin

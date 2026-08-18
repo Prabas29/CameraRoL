@@ -23,7 +23,7 @@ function photoFilename(guestName: string, createdAt: string, index: number): str
  *
  * Gerbang reveal ada DI SINI, bukan di komponen. Selama `isRevealed()` bernilai
  * false fungsi ini mengembalikan array kosong dan tidak pernah menerbitkan satu
- * pun signed URL — jadi tidak ada jalan bagi tamu untuk mendapatkan alamat foto
+ * pun signed URL, jadi tidak ada jalan bagi tamu untuk mendapatkan alamat foto
  * sebelum waktunya, seberapa pun kreatif mereka mengutak-atik client.
  */
 export async function getRevealedPhotos(
@@ -57,7 +57,7 @@ export async function getRevealedPhotos(
     .eq('event_id', event.id)
 
   if (guestsError) {
-    // Bukan alasan menggagalkan gallery — foto tetap tampil, namanya saja yang
+    // Bukan alasan menggagalkan gallery, foto tetap tampil, namanya saja yang
     // jatuh ke default "Tamu".
     console.error(`[rol] gagal membaca nama tamu (${event.id}):`, guestsError.message)
   }
@@ -83,7 +83,7 @@ export async function getRevealedPhotos(
         guestName,
         createdAt: row.created_at,
         url,
-        // Foto lama belum punya thumbnail — pakai versi penuh supaya tetap tampil.
+        // Foto lama belum punya thumbnail, pakai versi penuh supaya tetap tampil.
         thumbUrl: (row.thumb_storage_path && signedUrls.get(row.thumb_storage_path)) || url,
         filename: photoFilename(guestName, row.created_at, index),
       },

@@ -8,7 +8,7 @@ import { splitDuration } from '@/lib/reveal'
 /**
  * Hitung mundur menuju waktu reveal.
  *
- * Ini murni lapisan tampilan. Gerbang sebenarnya ada di server — mengubah jam
+ * Ini murni lapisan tampilan. Gerbang sebenarnya ada di server, mengubah jam
  * perangkat cuma membuat angka di sini salah, tidak membuka foto.
  */
 export function Countdown({

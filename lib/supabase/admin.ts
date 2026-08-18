@@ -6,7 +6,7 @@ import { publicEnv, serverEnv } from '@/lib/env'
 import type { Database } from '@/types/database'
 
 /**
- * Client service_role — MELEWATI SEMUA RLS.
+ * Client service_role, MELEWATI SEMUA RLS.
  *
  * Ini tulang punggung model "server-gated": guest tidak punya key Supabase
  * sama sekali, jadi setiap aksi guest (join, upload, baca gallery) harus

@@ -18,7 +18,7 @@ function required(name: string, value: string | undefined): string {
   const trimmed = value.trim()
   if (trimmed !== value) {
     console.warn(
-      `[rol] Environment variable ${name} punya spasi/newline di ujungnya — ` +
+      `[rol] Environment variable ${name} punya spasi/newline di ujungnya, ` +
         `dipangkas otomatis. Sebaiknya dirapikan di sumbernya juga.`,
     )
   }
@@ -53,10 +53,10 @@ export const serverEnv = {
  * Urutannya penting. QR code yang tercetak menunjuk ke URL ini, jadi salah
  * pilih berarti tamu diarahkan ke deployment yang salah:
  *
- *   1. NEXT_PUBLIC_SITE_URL — dipakai kalau di-set eksplisit (dev, custom domain)
- *   2. Produksi Vercel      — domain produksi yang stabil, bukan URL deployment
+ *   1. NEXT_PUBLIC_SITE_URL: dipakai kalau di-set eksplisit (dev, custom domain)
+ *   2. Produksi Vercel:      domain produksi yang stabil, bukan URL deployment
  *                             yang berubah tiap kali push
- *   3. Preview Vercel       — URL deployment itu sendiri, supaya QR di preview
+ *   3. Preview Vercel:       URL deployment itu sendiri, supaya QR di preview
  *                             mengarah ke preview yang sedang diuji
  *   4. localhost
  *

@@ -17,7 +17,7 @@ const initialState: LoginResult = { error: null, sentTo: null }
  * `next` dan `error` diterima sebagai prop, bukan lewat useSearchParams.
  *
  * useSearchParams memaksa komponen ini keluar dari render server, sehingga
- * seluruh tombol login baru muncul setelah JavaScript selesai dimuat —
+ * seluruh tombol login baru muncul setelah JavaScript selesai dimuat,
  * pengunjung melihat kerangka kosong lebih dulu. Sebagai prop, tombolnya sudah
  * ada di HTML pertama.
  */
@@ -35,7 +35,7 @@ export function LoginForm({
 
   const [emailOpen, setEmailOpen] = useState(false)
 
-  // Setelah link terkirim, seluruh pilihan login diganti konfirmasi — menyisakan
+  // Setelah link terkirim, seluruh pilihan login diganti konfirmasi, menyisakan
   // tombol lain hanya mengundang orang mengklik ulang dan membatalkan link tadi.
   if (emailState.sentTo) {
     return (

@@ -12,7 +12,7 @@ function Card({
       data-slot="card"
       data-size={size}
       className={cn(
-        // Card ala iOS: radius besar, shadow lembut, dan ring hairline —
+        // Card ala iOS: radius besar, shadow lembut, dan ring hairline,
         // bukan ring gelap 10% yang di atas latar terang terbaca sebagai garis
         // kotor. Padding dinaikkan dari spacing(4) ke spacing(6) supaya terasa
         // lega, sesuai karakter antarmuka Apple.

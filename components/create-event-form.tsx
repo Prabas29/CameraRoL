@@ -24,7 +24,7 @@ export function CreateEventForm() {
   const [revealAt, setRevealAt] = useState<Date | undefined>(undefined)
 
   // Picker bekerja di zona waktu perangkat host. Konversi ke ISO dilakukan di
-  // browser supaya yang tersimpan adalah momen absolut sesuai zona waktu host —
+  // browser supaya yang tersimpan adalah momen absolut sesuai zona waktu host,
   // bukan zona waktu server (yang di Vercel selalu UTC).
   const revealIso = revealAt ? revealAt.toISOString() : ''
 

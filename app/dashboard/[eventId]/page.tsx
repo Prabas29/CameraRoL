@@ -49,7 +49,7 @@ export default async function EventDetailPage({ params, searchParams }: PageProp
   const photoList = (photoRows ?? []) as PhotoRow[]
   const guestNames = new Map(guestList.map((guest) => [guest.id, guest.name]))
 
-  // Host boleh melihat foto kapan saja — ini acaranya sendiri, dan dia butuh
+  // Host boleh melihat foto kapan saja, ini acaranya sendiri, dan dia butuh
   // ini untuk moderasi. Gerbang reveal hanya berlaku untuk tamu.
   const signedUrls = await signPhotoUrls(
     photoList.flatMap((photo) =>

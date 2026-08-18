@@ -19,7 +19,7 @@ export interface FilmStyleDef {
 
 /**
  * Hanya bagian teknisnya yang tinggal di sini. Label dan deskripsi pindah ke
- * kamus bahasa (`t.filmStyles`), karena keduanya teks tampilan — sementara
+ * kamus bahasa (`t.filmStyles`), karena keduanya teks tampilan, sementara
  * `cssFilter` dan angka grain/vignette sama di bahasa mana pun.
  */
 export const FILM_STYLES: Record<FilmStyle, FilmStyleDef> = {

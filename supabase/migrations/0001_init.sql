@@ -1,5 +1,5 @@
 -- ============================================================================
--- Rol — disposable camera digital untuk event
+-- Rol, disposable camera digital untuk event
 -- Migration 0001: schema awal, RLS, storage bucket
 -- ----------------------------------------------------------------------------
 -- Cara pakai (pilih salah satu):
@@ -61,7 +61,7 @@ create table if not exists public.photos (
   id                    uuid primary key default gen_random_uuid(),
   event_id              uuid not null references public.events (id) on delete cascade,
   guest_id              uuid not null references public.guests (id) on delete cascade,
-  -- foto mentah tanpa filter — sumber kebenaran, dipakai kalau nanti mau re-render
+  -- foto mentah tanpa filter, sumber kebenaran, dipakai kalau nanti mau re-render
   storage_path          text not null,
   -- foto yang filter-nya sudah di-"bake" saat capture, dipakai untuk display
   filtered_storage_path text not null,
@@ -115,7 +115,7 @@ alter view public.event_stats set (security_invoker = on);
 --    Model keamanan aplikasi ini adalah "server-gated":
 --      - Guest TIDAK PERNAH memegang key Supabase. Semua aksi guest
 --        (join, upload foto, baca gallery) lewat route handler Next.js yang
---        memakai service_role — dan service_role melewati RLS.
+--        memakai service_role, dan service_role melewati RLS.
 --      - Karena itu role `anon` sengaja TIDAK diberi policy sama sekali.
 --        RLS aktif + nol policy = tolak semua. Ini yang menjamin foto tidak
 --        bisa diintip sebelum reveal, bahkan lewat devtools.
@@ -149,7 +149,7 @@ create policy "host_reads_own_event_guests"
     )
   );
 
--- Host: baca foto di event miliknya (termasuk sebelum reveal — ini event dia)
+-- Host: baca foto di event miliknya (termasuk sebelum reveal, ini event dia)
 drop policy if exists "host_reads_own_event_photos" on public.photos;
 create policy "host_reads_own_event_photos"
   on public.photos

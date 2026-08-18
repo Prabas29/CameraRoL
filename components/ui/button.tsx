@@ -10,7 +10,7 @@ const buttonVariants = cva(
     variants: {
       variant: {
         // Sedikit depth, bukan flat: shadow halus yang menguat saat hover dan
-        // hilang saat ditekan — memberi kesan tombol benar-benar tertekan.
+        // hilang saat ditekan, memberi kesan tombol benar-benar tertekan.
         default:
           "bg-primary text-primary-foreground shadow-sm hover:bg-primary/90 hover:shadow-md active:shadow-xs",
         outline:

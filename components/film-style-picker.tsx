@@ -7,7 +7,7 @@ import type { FilmStyle } from '@/types/database'
 
 /**
  * Pemilih film style dengan swatch yang benar-benar memakai `cssFilter` dari
- * lib/film-styles — jadi apa yang dilihat host di sini adalah look yang sama
+ * lib/film-styles, jadi apa yang dilihat host di sini adalah look yang sama
  * dengan yang nanti muncul di kamera dan di foto hasilnya.
  */
 export function FilmStylePicker({

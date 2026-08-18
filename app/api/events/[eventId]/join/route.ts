@@ -14,7 +14,7 @@ interface JoinBody {
  * Tamu bergabung ke event.
  *
  * Menerima device id dari localStorage + nama, lalu meng-upsert baris `guests`.
- * Balasannya menyetel cookie httpOnly berisi id guest — sejak titik ini server
+ * Balasannya menyetel cookie httpOnly berisi id guest, sejak titik ini server
  * tidak perlu lagi mempercayai device id yang dikirim browser.
  */
 export async function POST(
@@ -53,7 +53,7 @@ export async function POST(
   const admin = createAdminClient()
 
   // Satu device = satu tamu per event (unique constraint di event_id+device_id).
-  // Join ulang hanya memperbarui namanya, bukan membuat tamu baru — supaya foto
+  // Join ulang hanya memperbarui namanya, bukan membuat tamu baru, supaya foto
   // lama tetap terkait ke orang yang sama.
   const { data: guest, error } = await admin
     .from('guests')

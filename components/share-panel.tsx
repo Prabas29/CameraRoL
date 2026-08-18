@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 
 /**
- * QR + link undangan. Dua-duanya menunjuk ke halaman join yang sama —
+ * QR + link undangan. Dua-duanya menunjuk ke halaman join yang sama,
  * QR untuk dicetak/ditempel di meja, link untuk disebar di grup chat.
  */
 export function SharePanel({ joinUrl, eventName }: { joinUrl: string; eventName: string }) {
@@ -50,7 +50,7 @@ export function SharePanel({ joinUrl, eventName }: { joinUrl: string; eventName:
         url: joinUrl,
       })
     } catch {
-      // Dibatalkan user — bukan error yang perlu ditampilkan.
+      // Dibatalkan user, bukan error yang perlu ditampilkan.
     }
   }
 

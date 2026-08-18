@@ -9,7 +9,7 @@ import { useT } from '@/components/i18n-provider'
 /**
  * Tampilan tunggu sebelum reveal.
  *
- * Saat hitungan habis, halaman minta data ulang ke server — bukan membuka
+ * Saat hitungan habis, halaman minta data ulang ke server, bukan membuka
  * sendiri. Server yang memutuskan album sudah boleh dibuka atau belum, jadi
  * memajukan jam perangkat tidak menghasilkan apa-apa selain angka yang salah.
  */

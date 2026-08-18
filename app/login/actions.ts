@@ -79,7 +79,7 @@ export async function sendMagicLink(
  * PKCE tetap benar karena code_verifier disimpan sebagai cookie oleh server
  * client yang sama dengan yang nanti menukarkan kodenya di /auth/callback.
  *
- * Client ID & secret Google sepenuhnya ada di sisi Supabase — tidak ada
+ * Client ID & secret Google sepenuhnya ada di sisi Supabase, tidak ada
  * kredensial Google apa pun di repo ini.
  */
 export async function signInWithGoogle(

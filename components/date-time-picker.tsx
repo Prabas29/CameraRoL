@@ -61,7 +61,7 @@ function startOfToday(): Date {
 /**
  * Pemilih tanggal + waktu dalam satu popover.
  *
- * Nilainya selalu satu `Date` utuh — pemanggil yang mengubahnya jadi ISO string.
+ * Nilainya selalu satu `Date` utuh, pemanggil yang mengubahnya jadi ISO string.
  * Tanggal dan jam sengaja tidak dipisah jadi dua state supaya tidak ada momen
  * di mana keduanya tidak sinkron.
  */

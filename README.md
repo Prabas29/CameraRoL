@@ -4,12 +4,12 @@ Kamera sekali pakai versi digital untuk acara. Host membuat event dan membagikan
 satu QR; tamu memotret lewat browser tanpa instal aplikasi dan tanpa login; semua
 foto terkunci sampai waktu reveal, lalu terbuka serentak jadi satu album bersama.
 
-Prototype/MVP — fokusnya membuktikan alur end-to-end.
+Prototype/MVP, fokusnya membuktikan alur end-to-end.
 
 ## Stack
 
 - Next.js 15 (App Router, TypeScript)
-- Supabase — Postgres + Storage. Auth hanya untuk host (magic link)
+- Supabase, Postgres + Storage. Auth hanya untuk host (magic link)
 - Tailwind CSS v4 + shadcn/ui
 - Deploy target: Vercel
 
@@ -18,8 +18,8 @@ Prototype/MVP — fokusnya membuktikan alur end-to-end.
 Ini keputusan arsitektur paling menentukan di project ini, jadi penting dipahami
 sebelum mengubah kode:
 
-- **Tamu tidak pernah memegang key Supabase.** Semua aksi tamu — join, upload
-  foto, membaca gallery — lewat route handler Next.js yang memakai
+- **Tamu tidak pernah memegang key Supabase.** Semua aksi tamu, join, upload
+  foto, membaca gallery, lewat route handler Next.js yang memakai
   `service_role`, dan route handler itulah yang menegakkan aturan reveal.
 - **Role `anon` sengaja tidak diberi policy sama sekali.** RLS aktif dengan nol
   policy berarti tolak semua. Ini yang membuat foto benar-benar tidak bisa
@@ -60,7 +60,7 @@ Isi nilainya dari **Project Settings → API** di dashboard Supabase:
 | `NEXT_PUBLIC_SUPABASE_URL` | Project URL | |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | anon / public key | aman di browser |
 | `SUPABASE_SERVICE_ROLE_KEY` | service_role key | **rahasia**, server saja |
-| `NEXT_PUBLIC_SITE_URL` | — | `http://localhost:3000` saat dev |
+| `NEXT_PUBLIC_SITE_URL` |, | `http://localhost:3000` saat dev |
 
 ### 4. Atur redirect URL magic link
 
@@ -85,7 +85,7 @@ npm run dev
 `navigator.mediaDevices.getUserMedia` hanya tersedia di *secure context*. Artinya
 halaman kamera berfungsi di:
 
-- `http://localhost:3000` — aman, localhost dianggap secure
+- `http://localhost:3000`, aman, localhost dianggap secure
 - domain HTTPS mana pun (mis. Vercel preview/production)
 
 Dan **tidak** berfungsi kalau kamu membuka dev server dari HP lewat IP LAN
@@ -141,7 +141,7 @@ preview, yang URL-nya berubah tiap push.
 npx vercel --prod
 ```
 
-Setelah itu buat event baru dari domain produksi — QR-nya akan berisi URL
+Setelah itu buat event baru dari domain produksi, QR-nya akan berisi URL
 produksi, dan bisa discan langsung dari HP.
 
 ## Struktur
@@ -156,7 +156,7 @@ app/
     new/                    form buat acara
     [eventId]/              detail: QR, statistik, kontrol, moderasi foto
   e/[eventId]/              area tamu
-    page.tsx                join — isi nama
+    page.tsx                join, isi nama
     camera/                 live preview + shutter + upload
     locked/                 countdown menunggu reveal
     gallery/                album terbuka + lightbox + unduh
@@ -195,7 +195,7 @@ supabase/migrations/        SQL
 
 Perlu dicatat: `getRevealedPhotos()` mengembalikan array kosong selama event
 belum terbuka, jadi saat terkunci tidak ada satu pun signed URL yang pernah
-sampai ke HTML — bukan sekadar disembunyikan lewat CSS.
+sampai ke HTML, bukan sekadar disembunyikan lewat CSS.
 
 ZIP "Unduh semua" dirakit di browser dengan JSZip. Signed URL Supabase mengirim
 `Access-Control-Allow-Origin: *` sehingga file bisa diambil langsung dari client,
@@ -208,10 +208,10 @@ dibatalkan:
 
 - **Jangan impor dari barrel `radix-ui`.** Pakai paket spesifik
   (`@radix-ui/react-dialog`, dst). Barrel-nya tidak ter-tree-shake dan menyeret
-  ~160 kB primitif tak terpakai ke hampir setiap rute — termasuk landing page.
+  ~160 kB primitif tak terpakai ke hampir setiap rute, termasuk landing page.
 - **Jangan panggil supabase-js dari komponen client.** Login memakai server
   action justru supaya SDK-nya (164 kB) tidak ikut ke browser. Tidak ada
-  `lib/supabase/client.ts` — itu disengaja.
+  `lib/supabase/client.ts`, itu disengaja.
 - **Middleware hanya berjalan di `/dashboard` dan `/login`.** Memperluas
   matcher-nya berarti setiap request tamu ikut menanggung satu round-trip
   `auth.getUser()` ke Supabase.
@@ -238,10 +238,10 @@ sintaksnya identik, preview dan hasil akhir tidak bisa melenceng.
 Tiap foto disimpan dua kali: versi mentah tanpa filter, dan versi yang filternya
 sudah di-bake. Mengganti film style event hanya memengaruhi foto berikutnya.
 
-> **TODO** — agar ganti style ikut mengubah foto lama, perlu proses render ulang
+> **TODO**, agar ganti style ikut mengubah foto lama, perlu proses render ulang
 > dari file mentah (job batch atau transform on-the-fly). Belum ada di MVP ini.
 
 ## Yang belum ada di MVP
 
 Payment/tier, App Clip & native app, offline capture & sync, multi-bahasa, dan
-gallery privat per tamu sebelum reveal — semuanya sengaja di luar scope.
+gallery privat per tamu sebelum reveal, semuanya sengaja di luar scope.

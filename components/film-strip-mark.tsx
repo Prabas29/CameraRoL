@@ -2,7 +2,7 @@
  * Ilustrasi pembuka halaman login: sepotong strip film 35mm.
  *
  * Gradien di dalam bingkainya sengaja sama persis dengan swatch di
- * FilmStylePicker, supaya bahasa visualnya nyambung — orang yang pertama
+ * FilmStylePicker, supaya bahasa visualnya nyambung, orang yang pertama
  * melihat halaman login akan mengenali bentuk yang sama saat memilih film style.
  */
 export function FilmStripMark({ className }: { className?: string }) {

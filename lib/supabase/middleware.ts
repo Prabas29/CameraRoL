@@ -7,7 +7,7 @@ import type { Database } from '@/types/database'
 /**
  * Merefresh sesi host di setiap request dan menjaga rute /dashboard.
  *
- * Rute guest (/e/...) sengaja tidak disentuh — guest memang tidak punya sesi
+ * Rute guest (/e/...) sengaja tidak disentuh, guest memang tidak punya sesi
  * Supabase sama sekali.
  */
 export async function updateSession(request: NextRequest) {

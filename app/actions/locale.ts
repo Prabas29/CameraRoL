@@ -10,7 +10,7 @@ import { LOCALE_COOKIE, localeCookieOptions } from '@/lib/i18n/server'
  * Menyimpan pilihan bahasa.
  *
  * Disimpan di cookie, bukan di URL. Konsekuensinya: link undangan tidak membawa
- * bahasa, jadi tiap tamu melihat halaman dalam bahasanya sendiri — bukan bahasa
+ * bahasa, jadi tiap tamu melihat halaman dalam bahasanya sendiri, bukan bahasa
  * host yang membagikan link. Untuk acara dengan tamu campuran, itu justru
  * perilaku yang diinginkan.
  */

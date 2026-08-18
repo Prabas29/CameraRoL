@@ -9,7 +9,7 @@ const JPEG_QUALITY = 0.9
 /**
  * Thumbnail untuk grid gallery. Petak di grid tidak pernah lebih lebar dari
  * ~300 px, jadi 480 px masih tajam di layar retina sekalipun. Kualitas boleh
- * lebih rendah karena file ini tidak pernah dilihat besar-besar — lightbox dan
+ * lebih rendah karena file ini tidak pernah dilihat besar-besar, lightbox dan
  * unduhan tetap memakai versi penuh.
  */
 const THUMB_EDGE = 480
@@ -18,9 +18,9 @@ const THUMB_QUALITY = 0.72
 const GRAIN_TILE = 128
 
 export interface CapturedPhoto {
-  /** Frame mentah tanpa filter — arsip untuk render ulang di kemudian hari. */
+  /** Frame mentah tanpa filter, arsip untuk render ulang di kemudian hari. */
   original: Blob
-  /** Frame yang filternya sudah di-bake — dipakai lightbox & unduhan. */
+  /** Frame yang filternya sudah di-bake, dipakai lightbox & unduhan. */
   filtered: Blob
   /** Versi kecil dari `filtered`, khusus grid gallery. */
   thumbnail: Blob

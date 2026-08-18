@@ -19,7 +19,7 @@ const MAX_BYTES = 10 * 1024 * 1024 // sejalan dengan file_size_limit bucket
  * nanti perlu render ulang) dan versi yang filternya sudah di-bake di browser
  * (yang ditampilkan di gallery).
  *
- * Tidak ada balasan berisi URL — foto memang tidak boleh terlihat sebelum
+ * Tidak ada balasan berisi URL, foto memang tidak boleh terlihat sebelum
  * reveal, termasuk oleh yang memotretnya.
  */
 export async function POST(
@@ -38,7 +38,7 @@ export async function POST(
     return NextResponse.json({ error: t.api.eventNotFound }, { status: 404 })
   }
 
-  // Identitas diambil dari cookie httpOnly, bukan dari body — browser tidak bisa
+  // Identitas diambil dari cookie httpOnly, bukan dari body, browser tidak bisa
   // mengaku-ngaku jadi tamu lain.
   const guest = await getGuest(eventId)
   if (!guest) {
@@ -109,7 +109,7 @@ export async function POST(
   // Kolom tidak dikenal, artinya migration 0002 belum dijalankan di project
   // Supabase ini. Dua kode karena sumbernya berbeda: PostgREST menolak lebih
   // dulu lewat schema cache-nya (PGRST204), sementara 42703 datang dari
-  // Postgres sendiri. Foto tetap harus tersimpan — sekadar tanpa thumbnail —
+  // Postgres sendiri. Foto tetap harus tersimpan, sekadar tanpa thumbnail,
   // supaya urutan deploy dan migration tidak saling mengunci.
   if (insertError?.code === 'PGRST204' || insertError?.code === '42703') {
     console.warn(

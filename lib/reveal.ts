@@ -39,7 +39,7 @@ export function splitDuration(ms: number): CountdownParts {
 }
 
 /**
- * Format tanggal mengikuti bahasa aktif — bukan sekadar penerjemahan nama
+ * Format tanggal mengikuti bahasa aktif, bukan sekadar penerjemahan nama
  * bulan, tapi juga urutannya: "18 Agustus 2026 pukul 19.00" versus
  * "August 18, 2026 at 7:00 PM".
  */
