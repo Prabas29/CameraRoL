@@ -1,60 +1,99 @@
 'use client'
 
-import { useSearchParams } from 'next/navigation'
-import { useActionState } from 'react'
+import { MailIcon } from 'lucide-react'
+import { useActionState, useState } from 'react'
 
-import { sendMagicLink, type LoginResult } from '@/app/login/actions'
+import { sendMagicLink, signInWithGoogle, type LoginResult } from '@/app/login/actions'
+import { GoogleLogo } from '@/components/google-logo'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 
 const ERROR_MESSAGES: Record<string, string> = {
-  missing_code: 'Link tidak lengkap. Coba kirim ulang link masuk.',
-  invalid_link: 'Link sudah dipakai atau kedaluwarsa. Kirim ulang, ya.',
+  missing_code: 'Link tidak lengkap. Coba masuk sekali lagi.',
+  exchange_failed: 'Link sudah dipakai atau kedaluwarsa. Kirim ulang, ya.',
+  google_denied: 'Kamu membatalkan izin di Google. Coba lagi kalau berubah pikiran.',
+  oauth_failed: 'Login lewat Google gagal. Coba lagi atau pakai email.',
 }
 
 const initialState: LoginResult = { error: null, sentTo: null }
 
-export function LoginForm() {
-  const searchParams = useSearchParams()
-  const nextPath = searchParams.get('next') ?? ''
-  const linkError = searchParams.get('error')
+/**
+ * `next` dan `error` diterima sebagai prop, bukan lewat useSearchParams.
+ *
+ * useSearchParams memaksa komponen ini keluar dari render server, sehingga
+ * seluruh tombol login baru muncul setelah JavaScript selesai dimuat —
+ * pengunjung melihat kerangka kosong lebih dulu. Sebagai prop, tombolnya sudah
+ * ada di HTML pertama.
+ */
+export function LoginForm({
+  nextPath = '',
+  linkError = null,
+}: {
+  nextPath?: string
+  linkError?: string | null
+}) {
+  const [emailState, sendEmail, sendingEmail] = useActionState(sendMagicLink, initialState)
+  const [googleState, startGoogle, startingGoogle] = useActionState(signInWithGoogle, initialState)
 
-  const [state, formAction, pending] = useActionState(sendMagicLink, initialState)
+  const [emailOpen, setEmailOpen] = useState(false)
 
-  // Pengiriman link ditangani server action, jadi komponen ini tidak perlu
-  // memuat supabase-js sama sekali.
-  if (state.sentTo) {
+  // Setelah link terkirim, seluruh pilihan login diganti konfirmasi — menyisakan
+  // tombol lain hanya mengundang orang mengklik ulang dan membatalkan link tadi.
+  if (emailState.sentTo) {
     return (
-      <Card className="w-full max-w-sm">
+      <Card>
         <CardHeader>
-          <CardTitle>Cek emailmu</CardTitle>
-          <CardDescription>
-            Link masuk sudah dikirim ke <span className="text-foreground">{state.sentTo}</span>.
-            Buka link itu di perangkat ini untuk melanjutkan.
+          <CardTitle className="text-base">Cek emailmu</CardTitle>
+          <CardDescription className="leading-relaxed">
+            Link masuk sudah dikirim ke{' '}
+            <span className="text-foreground">{emailState.sentTo}</span>. Buka link itu di
+            perangkat ini untuk melanjutkan.
           </CardDescription>
         </CardHeader>
       </Card>
     )
   }
 
-  const error = state.error ?? (linkError ? (ERROR_MESSAGES[linkError] ?? 'Link masuk bermasalah.') : null)
+  const error =
+    googleState.error ??
+    emailState.error ??
+    (linkError ? (ERROR_MESSAGES[linkError] ?? 'Login bermasalah. Coba lagi.') : null)
 
   return (
-    <Card className="w-full max-w-sm">
-      <CardHeader>
-        <CardTitle>Masuk sebagai host</CardTitle>
-        <CardDescription>
-          Kami kirimkan link sekali pakai ke emailmu. Tidak perlu password.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form action={formAction} className="grid gap-4">
+    <div className="grid gap-3">
+      {error ? (
+        <p
+          role="alert"
+          className="rounded-xl bg-destructive/10 px-4 py-3 text-center text-sm leading-relaxed text-destructive"
+        >
+          {error}
+        </p>
+      ) : null}
+
+      <form action={startGoogle}>
+        <input type="hidden" name="next" value={nextPath} />
+        <Button
+          type="submit"
+          size="lg"
+          variant="outline"
+          disabled={startingGoogle}
+          className="w-full bg-card"
+        >
+          <GoogleLogo />
+          {startingGoogle ? 'Menghubungkan…' : 'Lanjutkan dengan Google'}
+        </Button>
+      </form>
+
+      {emailOpen ? (
+        <form action={sendEmail} className="grid gap-3 duration-200 animate-in fade-in slide-in-from-top-1">
           <input type="hidden" name="next" value={nextPath} />
 
           <div className="grid gap-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email" className="text-xs text-muted-foreground">
+              Alamat email
+            </Label>
             <Input
               id="email"
               name="email"
@@ -63,16 +102,34 @@ export function LoginForm() {
               autoComplete="email"
               placeholder="kamu@email.com"
               required
+              autoFocus
             />
           </div>
 
-          {error ? <p className="text-sm text-destructive">{error}</p> : null}
-
-          <Button type="submit" disabled={pending}>
-            {pending ? 'Mengirim…' : 'Kirim link masuk'}
+          <Button type="submit" size="lg" disabled={sendingEmail} className="w-full">
+            {sendingEmail ? 'Mengirim…' : 'Kirim link masuk'}
           </Button>
+
+          <button
+            type="button"
+            onClick={() => setEmailOpen(false)}
+            className="text-xs text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+          >
+            Batal
+          </button>
         </form>
-      </CardContent>
-    </Card>
+      ) : (
+        <Button
+          type="button"
+          size="lg"
+          variant="secondary"
+          className="w-full"
+          onClick={() => setEmailOpen(true)}
+        >
+          <MailIcon />
+          Masuk dengan Email
+        </Button>
+      )}
+    </div>
   )
 }

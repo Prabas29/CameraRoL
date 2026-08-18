@@ -1,6 +1,7 @@
 'use server'
 
 import { headers } from 'next/headers'
+import { redirect } from 'next/navigation'
 
 import { siteUrl } from '@/lib/env'
 import { createClient } from '@/lib/supabase/server'
@@ -8,6 +9,25 @@ import { createClient } from '@/lib/supabase/server'
 export interface LoginResult {
   error: string | null
   sentTo: string | null
+}
+
+/**
+ * Merangkai URL /auth/callback, lengkap dengan tujuan setelah login.
+ *
+ * Origin diambil dari request supaya deployment preview mengembalikan pengguna
+ * ke preview itu sendiri, bukan ke produksi.
+ */
+async function callbackUrl(nextPath: string): Promise<string> {
+  const base = (await headers()).get('origin') ?? siteUrl()
+  const callback = new URL('/auth/callback', base)
+
+  // Hanya path relatif, supaya parameter ini tidak bisa dipakai melempar orang
+  // ke domain lain setelah login.
+  if (nextPath.startsWith('/') && !nextPath.startsWith('//')) {
+    callback.searchParams.set('next', nextPath)
+  }
+
+  return callback.toString()
 }
 
 /**
@@ -28,23 +48,55 @@ export async function sendMagicLink(
     return { error: 'Masukkan alamat email yang valid.', sentTo: null }
   }
 
-  // Pakai origin dari request kalau ada, supaya deployment preview tetap
-  // mengirim link yang kembali ke preview itu sendiri.
-  const requestOrigin = (await headers()).get('origin')
-  const base = requestOrigin ?? siteUrl()
-
-  const callback = new URL('/auth/callback', base)
-  if (nextPath.startsWith('/') && !nextPath.startsWith('//')) {
-    callback.searchParams.set('next', nextPath)
-  }
-
   const supabase = await createClient()
   const { error } = await supabase.auth.signInWithOtp({
     email,
-    options: { emailRedirectTo: callback.toString() },
+    options: { emailRedirectTo: await callbackUrl(nextPath) },
   })
 
   if (error) return { error: error.message, sentTo: null }
 
   return { error: null, sentTo: email }
+}
+
+/**
+ * Login lewat Google.
+ *
+ * Dijalankan di server, bukan di browser. `skipBrowserRedirect` membuat
+ * supabase-js mengembalikan URL otorisasi Google alih-alih langsung
+ * mengarahkan halaman, lalu server yang me-redirect ke sana.
+ *
+ * Kenapa begitu: memanggil signInWithOAuth dari komponen client mengharuskan
+ * supabase-js ikut ter-bundle ke browser (~164 kB) hanya demi satu tombol.
+ * Lewat server action, halaman login tetap tidak memuat SDK sama sekali.
+ * PKCE tetap benar karena code_verifier disimpan sebagai cookie oleh server
+ * client yang sama dengan yang nanti menukarkan kodenya di /auth/callback.
+ *
+ * Client ID & secret Google sepenuhnya ada di sisi Supabase — tidak ada
+ * kredensial Google apa pun di repo ini.
+ */
+export async function signInWithGoogle(
+  _prev: LoginResult,
+  formData: FormData,
+): Promise<LoginResult> {
+  const nextPath = String(formData.get('next') ?? '')
+
+  const supabase = await createClient()
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: 'google',
+    options: {
+      redirectTo: await callbackUrl(nextPath),
+      skipBrowserRedirect: true,
+    },
+  })
+
+  if (error || !data?.url) {
+    return {
+      error: error?.message ?? 'Tidak bisa menghubungi Google. Coba lagi sebentar.',
+      sentTo: null,
+    }
+  }
+
+  // redirect() melempar sinyal internal Next, jadi harus di luar try/catch.
+  redirect(data.url)
 }
