@@ -16,22 +16,33 @@ import { createAdminClient } from '@/lib/supabase/admin'
  */
 export const dynamic = 'force-dynamic'
 
-function describeKey(value: string | undefined) {
+function describeKey(value: string | undefined, harusnya: 'secret' | 'publishable') {
   if (!value) return { ada: false }
+
+  const jenis = value.startsWith('sb_secret_')
+    ? 'secret'
+    : value.startsWith('sb_publishable_')
+      ? 'publishable'
+      : value.startsWith('eyJ')
+        ? 'jwt-legacy'
+        : 'tidak dikenali'
+
+  const cocok = jenis === harusnya
 
   return {
     ada: true,
     awalan: value.slice(0, 10),
     panjang: value.length,
     adaSpasiAtauNewline: /\s/.test(value),
+    // Penilaian harus relatif terhadap variabel yang diperiksa: sb_publishable_
+    // itu BENAR untuk anon key dan SALAH untuk service_role. Versi sebelumnya
+    // memakai satu penilaian untuk keduanya dan jadi menyesatkan.
     format:
-      value.startsWith('sb_secret_')
-        ? 'service_role (format baru) — BENAR'
-        : value.startsWith('sb_publishable_')
-          ? 'anon/publishable — SALAH, ini yang bikin RLS memblokir semua'
-          : value.startsWith('eyJ')
-            ? 'JWT legacy — bisa anon atau service_role, tidak bisa dibedakan dari awalan'
-            : 'tidak dikenali',
+      jenis === 'jwt-legacy'
+        ? 'JWT legacy — tidak bisa dibedakan anon/service_role dari awalannya'
+        : cocok
+          ? `${jenis} — BENAR`
+          : `${jenis} — SALAH, seharusnya ${harusnya}`,
   }
 }
 
@@ -40,8 +51,8 @@ export async function GET() {
     vercelEnv: process.env.VERCEL_ENV ?? '(bukan Vercel)',
     supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL ?? null,
     siteUrlTerdeteksi: process.env.VERCEL_PROJECT_PRODUCTION_URL ?? null,
-    serviceRoleKey: describeKey(process.env.SUPABASE_SERVICE_ROLE_KEY),
-    anonKey: describeKey(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY),
+    serviceRoleKey: describeKey(process.env.SUPABASE_SERVICE_ROLE_KEY, 'secret'),
+    anonKey: describeKey(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY, 'publishable'),
   }
 
   try {
