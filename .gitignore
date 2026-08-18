@@ -32,6 +32,11 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+# ...tapi template-nya wajib ikut ter-commit
+!.env.local.example
+
+# editor / tooling lokal
+.claude/
 
 # vercel
 .vercel

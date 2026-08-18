@@ -1,0 +1,14 @@
+# Env lokal TIDAK BOLEH ikut terunggah. Kalau ikut, Next.js akan memakainya saat
+# build di Vercel — artinya service_role key lokal terbawa, dan
+# NEXT_PUBLIC_SITE_URL=http://localhost:3000 akan menang atas deteksi domain,
+# sehingga semua QR code di produksi menunjuk ke localhost.
+.env
+.env.local
+.env.*.local
+
+# Perhatikan garis miring di depan: pola di sini mengikuti semantik gitignore,
+# jadi `supabase/` tanpa awalan `/` juga akan mencocokkan `lib/supabase/` dan
+# membuat build gagal dengan "Can't resolve '@/lib/supabase/client'".
+# `/supabase/` hanya mencocokkan folder migration di root.
+/supabase/
+/.claude/
