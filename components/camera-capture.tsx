@@ -51,11 +51,28 @@ function lensLabel(device: MediaDeviceInfo, index: number, t: Dictionary): strin
 
   if (label.includes('ultra')) return t.camera.lensUltraWide
   if (label.includes('tele')) return t.camera.lensTele
-  if (label.includes('front') || label.includes('user')) return t.camera.lensFront
   if (label.includes('wide')) return t.camera.lensWide
-  if (label.includes('back') || label.includes('environment')) return t.camera.lensBack
+
+  // iOS menamai kamera utamanya "Back Camera" begitu saja. Menampilkannya
+  // sebagai "Belakang" bikin bingung karena bersanding dengan Wide dan
+  // Ultra-wide yang juga di belakang; "Utama" lebih jelas.
+  if (label.includes('back') || label.includes('environment')) return t.camera.lensMain
+  if (label.includes('front') || label.includes('user')) return t.camera.lensFront
 
   return t.camera.lensNumbered(index + 1)
+}
+
+/**
+ * Menebak apakah sebuah kamera menghadap ke pengguna.
+ *
+ * Hanya lewat label, karena facingMode sebenarnya cuma bisa dibaca dari track
+ * yang sudah menyala, sementara daftar ini berisi kamera yang belum dinyalakan.
+ * Perangkat yang labelnya tidak menyebut arah dianggap kamera belakang, supaya
+ * jatuhnya ke daftar yang tampil dan bukan disembunyikan diam-diam.
+ */
+function isFrontLens(device: MediaDeviceInfo): boolean {
+  const label = device.label.toLowerCase()
+  return label.includes('front') || label.includes('user')
 }
 
 export function CameraCapture({
@@ -79,6 +96,7 @@ export function CameraCapture({
   const [deviceId, setDeviceId] = useState<string | null>(null)
   const [devices, setDevices] = useState<MediaDeviceInfo[]>([])
   const [mirrored, setMirrored] = useState(false)
+  const [activeFront, setActiveFront] = useState(false)
   const [portrait, setPortrait] = useState(true)
   const [busy, setBusy] = useState(false)
   const [flashing, setFlashing] = useState(false)
@@ -141,11 +159,13 @@ export function CameraCapture({
 
         streamRef.current = stream
 
-        // Cermin ditentukan dari track yang benar-benar aktif, bukan dari
+        // Arah kamera dibaca dari track yang benar-benar aktif, bukan dari
         // tebakan kita. Saat modul dipilih lewat deviceId, state facingMode
         // tidak lagi mencerminkan kamera mana yang menyala.
         const settings = stream.getVideoTracks()[0]?.getSettings()
-        setMirrored(settings?.facingMode === 'user')
+        const front = settings?.facingMode ? settings.facingMode === 'user' : facingMode === 'user'
+        setMirrored(front)
+        setActiveFront(front)
 
         const video = videoRef.current
         if (video) {
@@ -222,9 +242,12 @@ export function CameraCapture({
   const activeDeviceId =
     deviceId ?? streamRef.current?.getVideoTracks()[0]?.getSettings().deviceId ?? null
 
-  // Satu kamera depan + satu belakang sudah tertangani tombol balik; daftar
-  // modul baru berguna kalau perangkatnya benar-benar punya lebih dari itu.
-  const showLensPicker = devices.length > 2
+  // Hanya modul di sisi yang sedang aktif. Berpindah depan/belakang sudah
+  // tugas tombol balik, jadi menaruh "Depan" di daftar ini cuma menduplikasi
+  // kontrol yang sudah ada. Efek sampingnya bagus: di kamera depan yang
+  // biasanya cuma satu, daftarnya hilang sendiri.
+  const lenses = devices.filter((device) => isFrontLens(device) === activeFront)
+  const showLensPicker = lenses.length > 1
 
   return (
     <div className="flex min-h-svh flex-col bg-black">
@@ -331,7 +354,7 @@ export function CameraCapture({
             aria-label={t.camera.chooseCamera}
             className="mx-auto flex max-w-full gap-1 overflow-x-auto rounded-full bg-white/10 p-1"
           >
-            {devices.map((device, index) => {
+            {lenses.map((device, index) => {
               const active = device.deviceId === activeDeviceId
 
               return (
