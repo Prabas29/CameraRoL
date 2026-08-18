@@ -10,7 +10,24 @@ function required(name: string, value: string | undefined): string {
       `Environment variable ${name} belum diisi. Salin .env.local.example jadi .env.local lalu lengkapi nilainya.`,
     )
   }
-  return value
+
+  // URL dan API key tidak pernah sah punya spasi/newline di ujung, sementara
+  // paste ke dashboard Vercel gampang sekali membawa satu karakter nyasar.
+  // Dipangkas, tapi tetap diberi peringatan supaya salah paste ketahuan dan
+  // bukan disembunyikan diam-diam.
+  const trimmed = value.trim()
+  if (trimmed !== value) {
+    console.warn(
+      `[rol] Environment variable ${name} punya spasi/newline di ujungnya — ` +
+        `dipangkas otomatis. Sebaiknya dirapikan di sumbernya juga.`,
+    )
+  }
+
+  if (!trimmed) {
+    throw new Error(`Environment variable ${name} hanya berisi spasi.`)
+  }
+
+  return trimmed
 }
 
 /** Aman dipakai di browser. */
