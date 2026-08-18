@@ -34,8 +34,12 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="id" className="dark">
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+    // Variabel font harus di <html>, bukan <body>: globals.css memakai
+    // `html { @apply font-sans }`, dan CSS custom property hanya mewaris ke
+    // bawah. Kalau dipasang di <body>, `var(--font-sans)` di <html> tidak
+    // terdefinisi dan seluruh halaman jatuh ke font serif bawaan browser.
+    <html lang="id" className={`dark ${geistSans.variable} ${geistMono.variable}`}>
+      <body className="antialiased">
         {children}
         <Toaster position="top-center" />
       </body>
