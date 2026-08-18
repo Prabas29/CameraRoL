@@ -6,7 +6,7 @@ export const metadata = { title: 'Buat acara — Rol' }
 
 export default function NewEventPage() {
   return (
-    <div className="grid gap-8">
+    <div className="grid gap-10">
       <div className="grid gap-1">
         <Link href="/dashboard" className="text-sm text-muted-foreground hover:text-foreground">
           ← Kembali

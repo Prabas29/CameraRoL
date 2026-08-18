@@ -30,7 +30,7 @@ export default async function GalleryPage({ params }: { params: Promise<{ eventI
       </header>
 
       {photos.length === 0 ? (
-        <div className="grid gap-4 rounded-lg border border-dashed p-10 text-center">
+        <div className="grid gap-4 rounded-2xl border border-dashed p-10 text-center">
           <p className="text-sm text-muted-foreground">
             Album sudah dibuka, tapi belum ada foto sama sekali di acara ini.
           </p>

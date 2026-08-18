@@ -141,12 +141,14 @@ function ModeOption({
       onClick={onSelect}
       aria-pressed={selected}
       className={cn(
-        'rounded-lg border p-4 text-left transition-colors',
-        selected ? 'border-primary bg-primary/10' : 'hover:border-muted-foreground/40',
+        'rounded-2xl border bg-card p-5 text-left shadow-xs transition-all',
+        selected
+          ? 'border-primary bg-primary/8 shadow-sm ring-2 ring-primary/25'
+          : 'hover:border-muted-foreground/30 hover:shadow-sm',
       )}
     >
-      <span className="block text-sm font-medium">{title}</span>
-      <span className="mt-1 block text-xs text-muted-foreground">{detail}</span>
+      <span className="block text-sm font-semibold">{title}</span>
+      <span className="mt-1.5 block text-xs leading-relaxed text-muted-foreground">{detail}</span>
     </button>
   )
 }

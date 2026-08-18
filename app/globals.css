@@ -7,8 +7,12 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-sans);
-  --font-mono: var(--font-geist-mono);
+  /* Geist tetap font utama; -apple-system menyusul sebagai fallback pertama
+     supaya di perangkat Apple hurufnya jatuh ke San Francisco, bukan ke serif
+     bawaan browser. */
+  --font-sans: var(--font-geist-sans), -apple-system, BlinkMacSystemFont, 'Segoe UI',
+    system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
   --font-heading: var(--font-sans);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
@@ -46,78 +50,79 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
+
+  /* Shadow bertema iOS: sebaran lebar, opacity rendah, dan warnanya bukan
+     hitam pekat melainkan abu kebiruan dari --foreground. Shadow hitam murni
+     terlihat kotor di atas background hangat #FAFAF9. */
+  --shadow-2xs: 0 1px 1px rgb(28 28 30 / 0.03);
+  --shadow-xs: 0 1px 2px rgb(28 28 30 / 0.04);
+  --shadow-sm: 0 1px 3px rgb(28 28 30 / 0.05), 0 1px 2px -1px rgb(28 28 30 / 0.04);
+  --shadow-md: 0 4px 16px -2px rgb(28 28 30 / 0.06), 0 2px 6px -2px rgb(28 28 30 / 0.04);
+  --shadow-lg: 0 12px 32px -8px rgb(28 28 30 / 0.1), 0 4px 12px -4px rgb(28 28 30 / 0.05);
+  --shadow-xl: 0 24px 48px -12px rgb(28 28 30 / 0.12), 0 8px 20px -8px rgb(28 28 30 / 0.06);
 }
 
+/* ---------------------------------------------------------------------------
+   Rol berjalan light-only, bernuansa iOS: putih hangat, hairline tipis, dan
+   amber dipakai hemat sebagai aksen brand.
+
+   Catatan aksesibilitas pada --primary: amber #C08A3E dengan teks putih hanya
+   mencapai kontras 3.0:1, di bawah ambang WCAG AA. Menurunkan amber-nya sampai
+   putih lolos akan mengubahnya jadi cokelat tua dan menghilangkan karakter
+   emasnya. Karena itu amber dipertahankan cerah dan teksnya near-black hangat
+   (#241A08) — kontras 5.9:1, lolos AA, dan terasa lebih editorial.
+   --------------------------------------------------------------------------- */
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --background: #fafaf9;
+  --foreground: #1c1c1e;
+
+  --card: #ffffff;
+  --card-foreground: #1c1c1e;
+  --popover: #ffffff;
+  --popover-foreground: #1c1c1e;
+
+  --primary: #c08a3e;
+  --primary-foreground: #241a08;
+
+  /* #F2F2F7 — warna field & grouped background khas iOS */
+  --secondary: #f2f2f7;
+  --secondary-foreground: #1c1c1e;
+  --muted: #f2f2f7;
+  --muted-foreground: #6e6e73;
+  --accent: #f2f2f7;
+  --accent-foreground: #1c1c1e;
+
+  --destructive: #c7362b;
+
+  --border: #e5e5ea;
+  --input: #e5e5ea;
+  --ring: #c08a3e;
+
+  --chart-1: #c08a3e;
+  --chart-2: #6e6e73;
+  --chart-3: #8e8e93;
+  --chart-4: #aeaeb2;
+  --chart-5: #c7c7cc;
+
+  /* Naik dari 0.625rem. Radius besar adalah elemen kunci "rasa iOS", dan
+     karena semua radius lain diturunkan dari sini, satu angka ini
+     membesarkan card, button, input, dan popover sekaligus. */
+  --radius: 1rem;
+
+  --sidebar: #ffffff;
+  --sidebar-foreground: #1c1c1e;
+  --sidebar-primary: #c08a3e;
+  --sidebar-primary-foreground: #241a08;
+  --sidebar-accent: #f2f2f7;
+  --sidebar-accent-foreground: #1c1c1e;
+  --sidebar-border: #e5e5ea;
+  --sidebar-ring: #c08a3e;
 }
 
-/* Rol dijalankan dark-only: aplikasi kamera lebih enak dilihat gelap, dan
-   preview foto tidak "ditarik" warnanya oleh latar putih. */
-.dark {
-  --background: oklch(0.14 0.006 70);
-  --foreground: oklch(0.97 0.005 80);
-  --card: oklch(0.19 0.008 70);
-  --card-foreground: oklch(0.97 0.005 80);
-  --popover: oklch(0.19 0.008 70);
-  --popover-foreground: oklch(0.97 0.005 80);
-  --primary: oklch(0.8 0.14 76);
-  --primary-foreground: oklch(0.21 0.03 70);
-  --secondary: oklch(0.26 0.008 70);
-  --secondary-foreground: oklch(0.97 0.005 80);
-  --muted: oklch(0.26 0.008 70);
-  --muted-foreground: oklch(0.7 0.012 75);
-  --accent: oklch(0.28 0.014 72);
-  --accent-foreground: oklch(0.97 0.005 80);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 11%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.8 0.14 76);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
-}
+/* Blok .dark sengaja dihapus, bukan sekadar tidak dipakai.
+   Aplikasi ini light-only; menyisakan definisi tema kedua berarti ada dua
+   sumber kebenaran yang gampang melenceng diam-diam. Halaman kamera tetap
+   gelap, tapi kegelapannya milik komponen itu sendiri (bg-black), bukan tema. */
 
 @layer base {
   * {

@@ -29,7 +29,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         </div>
       </header>
 
-      <main className="mx-auto max-w-5xl px-6 py-10">{children}</main>
+      <main className="mx-auto max-w-5xl px-6 py-12 sm:py-16">{children}</main>
     </div>
   )
 }

@@ -33,7 +33,7 @@ export default async function DashboardPage() {
   )
 
   return (
-    <div className="grid gap-8">
+    <div className="grid gap-10">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Acara saya</h1>

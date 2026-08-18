@@ -76,7 +76,7 @@ export default async function EventDetailPage({ params, searchParams }: PageProp
   const revealed = isRevealed(event)
 
   return (
-    <div className="grid gap-8">
+    <div className="grid gap-10">
       <div className="grid gap-2">
         <Link href="/dashboard" className="text-sm text-muted-foreground hover:text-foreground">
           ← Semua acara

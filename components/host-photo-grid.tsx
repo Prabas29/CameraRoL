@@ -29,7 +29,7 @@ export function HostPhotoGrid({
 
   if (photos.length === 0) {
     return (
-      <p className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
+      <p className="rounded-2xl border border-dashed p-6 text-center text-sm text-muted-foreground">
         Belum ada foto masuk. Foto akan muncul di sini begitu tamu mulai memotret.
       </p>
     )
@@ -55,7 +55,7 @@ export function HostPhotoGrid({
     <>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
         {photos.map((photo) => (
-          <figure key={photo.id} className="group relative overflow-hidden rounded-lg border">
+          <figure key={photo.id} className="group relative overflow-hidden rounded-2xl border">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={photo.thumbUrl}
@@ -65,6 +65,7 @@ export function HostPhotoGrid({
               decoding="async"
             />
 
+            {/* Sengaja tetap gelap: label ini di atas foto, bukan di atas card. */}
             <figcaption className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent px-2 pb-2 pt-6 text-xs text-white">
               {photo.guestName}
             </figcaption>

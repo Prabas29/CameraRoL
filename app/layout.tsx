@@ -5,8 +5,11 @@ import { Toaster } from '@/components/ui/sonner'
 
 import './globals.css'
 
+// Namanya --font-geist-sans, bukan --font-sans: globals.css menyusun
+// --font-sans sebagai rantai lengkap (Geist → -apple-system → …), jadi kalau
+// next/font ikut memakai nama itu, keduanya saling menimpa.
 const geistSans = Geist({
-  variable: '--font-sans',
+  variable: '--font-geist-sans',
   subsets: ['latin'],
 })
 
@@ -22,7 +25,7 @@ export const metadata: Metadata = {
 }
 
 export const viewport: Viewport = {
-  themeColor: '#1a1713',
+  themeColor: '#fafaf9',
   // Halaman kamera memakai tinggi layar penuh; cegah zoom tak sengaja saat
   // menekan tombol shutter.
   maximumScale: 1,
@@ -38,7 +41,7 @@ export default function RootLayout({
     // `html { @apply font-sans }`, dan CSS custom property hanya mewaris ke
     // bawah. Kalau dipasang di <body>, `var(--font-sans)` di <html> tidak
     // terdefinisi dan seluruh halaman jatuh ke font serif bawaan browser.
-    <html lang="id" className={`dark ${geistSans.variable} ${geistMono.variable}`}>
+    <html lang="id" className={`${geistSans.variable} ${geistMono.variable}`}>
       <body className="antialiased">
         {children}
         <Toaster position="top-center" />

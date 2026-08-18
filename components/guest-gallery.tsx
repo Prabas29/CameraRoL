@@ -121,7 +121,7 @@ export function GuestGallery({
             key={photo.id}
             type="button"
             onClick={() => setActiveIndex(index)}
-            className="group relative overflow-hidden rounded-lg border transition-colors hover:border-primary/60"
+            className="group relative overflow-hidden rounded-2xl border transition-colors hover:border-primary/60"
           >
             {/* Grid memakai thumbnail; versi penuh baru dimuat saat lightbox
                 dibuka. Album 100 foto jadi hemat puluhan MB tanpa mengurangi
@@ -134,6 +134,10 @@ export function GuestGallery({
               loading="lazy"
               decoding="async"
             />
+            {/* Tetap gelap meski temanya terang: label ini melayang di atas
+                foto, bukan di atas card. Warna foto tidak bisa ditebak, jadi
+                gradien gelap + teks putih adalah satu-satunya kombinasi yang
+                selalu terbaca. */}
             <span className="absolute inset-x-0 bottom-0 truncate bg-gradient-to-t from-black/80 to-transparent px-2 pb-2 pt-6 text-left text-xs text-white">
               {photo.guestName}
             </span>
@@ -155,7 +159,7 @@ export function GuestGallery({
                 <img
                   src={active.url}
                   alt={`Foto oleh ${active.guestName}`}
-                  className="max-h-[70svh] w-full rounded-md object-contain"
+                  className="max-h-[70svh] w-full rounded-xl bg-secondary object-contain"
                 />
 
                 {photos.length > 1 ? (

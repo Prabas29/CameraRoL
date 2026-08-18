@@ -62,7 +62,13 @@ export function SharePanel({ joinUrl, eventName }: { joinUrl: string; eventName:
       </CardHeader>
 
       <CardContent className="grid gap-5 sm:grid-cols-[auto_1fr] sm:items-start">
-        <div ref={qrWrapperRef} className="mx-auto w-fit rounded-lg bg-white p-3 sm:mx-0">
+        {/* Ring tipis + shadow: kotak putih di atas #FAFAF9 hampir tidak
+            terlihat batasnya, padahal QR butuh "quiet zone" yang jelas supaya
+            mudah dipindai. */}
+        <div
+          ref={qrWrapperRef}
+          className="mx-auto w-fit rounded-2xl bg-white p-4 shadow-sm ring-1 ring-border sm:mx-0"
+        >
           <QRCodeCanvas value={joinUrl} size={168} level="M" marginSize={0} />
         </div>
 

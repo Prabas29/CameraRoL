@@ -31,8 +31,12 @@ export function FilmStylePicker({
             onClick={() => onChange(style.id)}
             aria-pressed={selected}
             className={cn(
-              'overflow-hidden rounded-lg border text-left transition-colors disabled:opacity-50',
-              selected ? 'border-primary' : 'hover:border-muted-foreground/40',
+              // ring-2 saat terpilih, bukan sekadar warna border: di atas card
+              // putih perbedaan warna border setipis 1px nyaris tak terbaca.
+              'overflow-hidden rounded-2xl border bg-card text-left shadow-xs transition-all disabled:opacity-50',
+              selected
+                ? 'border-primary shadow-sm ring-2 ring-primary/30'
+                : 'hover:border-muted-foreground/30 hover:shadow-sm',
             )}
           >
             <div className="relative aspect-[4/3] w-full">
@@ -56,9 +60,9 @@ export function FilmStylePicker({
               />
             </div>
 
-            <div className={cn('p-3', selected && 'bg-primary/10')}>
-              <span className="block text-sm font-medium">{style.label}</span>
-              <span className="mt-1 block text-xs text-muted-foreground">
+            <div className={cn('p-4', selected && 'bg-primary/8')}>
+              <span className="block text-sm font-semibold">{style.label}</span>
+              <span className="mt-1 block text-xs leading-relaxed text-muted-foreground">
                 {style.description}
               </span>
             </div>
