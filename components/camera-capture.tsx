@@ -130,9 +130,26 @@ export function CameraCapture({
   const [shotCount, setShotCount] = useState(0)
   const [lastShot, setLastShot] = useState<string | null>(null)
 
+  /**
+   * Melepas kamera sepenuhnya.
+   *
+   * Menghentikan track saja tidak cukup. Selama elemen <video> masih memegang
+   * MediaStream-nya, iOS tetap menganggap ada media yang berjalan dan
+   * menampilkan kontrol pause/resume miliknya sendiri, yang lalu ikut muncul di
+   * halaman lain setelah tamu berpindah dari kamera. Jadi elemennya juga
+   * dihentikan dan sumbernya dilepas.
+   */
   const stopStream = useCallback(() => {
     streamRef.current?.getTracks().forEach((track) => track.stop())
     streamRef.current = null
+
+    const video = videoRef.current
+    if (video) {
+      video.pause()
+      video.srcObject = null
+      video.removeAttribute('src')
+      video.load()
+    }
   }, [])
 
   // Kamus disimpan di ref, bukan jadi dependency efek. Kalau ikut jadi
@@ -351,10 +368,28 @@ export function CameraCapture({
       : { factor: 2, deviceId: main?.deviceId ?? null, digital: 2 },
   ]
 
+  /**
+   * Sudut pandang lensa yang sedang menyala, dinyatakan sebagai faktor zoom.
+   *
+   * Ultra-wide melihat dua kali lebih lebar daripada lensa utama, jadi nilainya
+   * 0,5 meski zoom digitalnya 1. Tanpa pembeda ini, "zoom" dan "faktor zoom"
+   * tercampur: preset 0,5x akan tampil sebagai 1x karena zoom digitalnya memang
+   * 1, padahal yang dilihat pengguna jelas lebih lebar.
+   */
+  const baseFactor =
+    activeDeviceId && ultraWide?.deviceId === activeDeviceId
+      ? 0.5
+      : activeDeviceId && tele?.deviceId === activeDeviceId
+        ? 2
+        : 1
+
+  /** Yang berarti bagi pengguna: gabungan lensa optik dan zoom digital. */
+  const effectiveZoom = baseFactor * zoom
+
   const activePresetIndex = presets.findIndex(
     (preset) =>
       (preset.deviceId ?? activeDeviceId) === activeDeviceId &&
-      Math.abs(preset.digital - zoom) < 0.05,
+      Math.abs(preset.factor - effectiveZoom) < 0.05,
   )
 
   const zoomFormatter = new Intl.NumberFormat(locale, { maximumFractionDigits: 1 })
@@ -419,6 +454,11 @@ export function CameraCapture({
             playsInline
             muted
             autoPlay
+            // Preview kamera bukan tayangan yang perlu dikirim ke layar lain.
+            // Tanpa ini iOS menawarkan PiP dan AirPlay, dan bersamaan dengan itu
+            // memunculkan kontrol pemutaran yang tidak ada gunanya di sini.
+            disablePictureInPicture
+            {...{ 'x-webkit-airplay': 'deny', disableRemotePlayback: true }}
             onLoadedMetadata={(loadEvent) => {
               const element = loadEvent.currentTarget
               setPortrait(element.videoHeight > element.videoWidth)
@@ -450,9 +490,9 @@ export function CameraCapture({
             }}
           />
 
-          {state === 'ready' && zoom > 1.02 ? (
+          {state === 'ready' && Math.abs(effectiveZoom - baseFactor) > 0.02 ? (
             <span className="pointer-events-none absolute left-1/2 top-3 -translate-x-1/2 rounded-full bg-black/60 px-3 py-1 font-mono text-xs tabular-nums text-white">
-              {zoomFormatter.format(zoom)}×
+              {zoomFormatter.format(effectiveZoom)}×
             </span>
           ) : null}
 
@@ -503,7 +543,7 @@ export function CameraCapture({
               // angkanya ikut bergerak alih-alih diam di 1x sementara gambarnya
               // jelas sudah membesar.
               const label = isActive
-                ? zoomFormatter.format(zoom)
+                ? zoomFormatter.format(effectiveZoom)
                 : zoomFormatter.format(preset.factor)
 
               return (
