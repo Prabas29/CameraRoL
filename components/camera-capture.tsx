@@ -5,12 +5,21 @@ import Link from 'next/link'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 
-import { useT } from '@/components/i18n-provider'
+import { useI18n } from '@/components/i18n-provider'
 import { Button } from '@/components/ui/button'
 import { capturePhoto } from '@/lib/bake-photo'
 import { grainDataUri, type FilmStyleDef } from '@/lib/film-styles'
 import type { Dictionary } from '@/lib/i18n/dictionaries'
 import { cn } from '@/lib/utils'
+
+/**
+ * Batas zoom digital.
+ *
+ * 5x sudah terlalu jauh untuk sensor ponsel: gambarnya lebih banyak berisi
+ * hasil interpolasi daripada detail nyata, dan foto acara yang lembek tidak ada
+ * gunanya. Zoom optik lewat pergantian lensa tidak terkena batas ini.
+ */
+const MAX_DIGITAL_ZOOM = 5
 
 type CameraState = 'starting' | 'ready' | 'error'
 type FacingMode = 'environment' | 'user'
@@ -38,28 +47,27 @@ function describeError(error: unknown, copy: CameraErrorCopy): CameraError {
 }
 
 /**
- * Memberi nama pendek pada tiap modul kamera.
+ * Mengelompokkan kamera belakang berdasarkan perannya.
  *
- * Label dari `enumerateDevices()` tidak seragam antar perangkat: Android sering
- * menulis "camera2 0, facing back", iOS menulis "Back Ultra Wide Camera",
- * sebagian browser hanya memberi string kosong sebelum izin diberikan. Karena
- * itu labelnya dicocokkan dengan kata kunci, dan kalau tidak dikenali jatuh ke
- * penomoran biasa supaya tombolnya tetap bisa dibedakan.
+ * Label dari enumerateDevices tidak seragam: Android sering menulis
+ * "camera2 0, facing back", iOS menulis "Back Ultra Wide Camera". Yang bisa
+ * diandalkan cuma kata kuncinya. Kalau tidak ada yang cocok, kamera pertama
+ * dianggap kamera utama supaya tombol 1x tetap berfungsi.
  */
-function lensLabel(device: MediaDeviceInfo, index: number, t: Dictionary): string {
-  const label = device.label.toLowerCase()
+function groupLenses(devices: MediaDeviceInfo[]) {
+  const has = (device: MediaDeviceInfo, keyword: string) =>
+    device.label.toLowerCase().includes(keyword)
 
-  if (label.includes('ultra')) return t.camera.lensUltraWide
-  if (label.includes('tele')) return t.camera.lensTele
-  if (label.includes('wide')) return t.camera.lensWide
+  const ultraWide = devices.find((device) => has(device, 'ultra')) ?? null
+  const tele = devices.find((device) => has(device, 'tele')) ?? null
+  const main =
+    devices.find(
+      (device) => device !== ultraWide && device !== tele && has(device, 'wide'),
+    ) ??
+    devices.find((device) => device !== ultraWide && device !== tele) ??
+    null
 
-  // iOS menamai kamera utamanya "Back Camera" begitu saja. Menampilkannya
-  // sebagai "Belakang" bikin bingung karena bersanding dengan Wide dan
-  // Ultra-wide yang juga di belakang; "Utama" lebih jelas.
-  if (label.includes('back') || label.includes('environment')) return t.camera.lensMain
-  if (label.includes('front') || label.includes('user')) return t.camera.lensFront
-
-  return t.camera.lensNumbered(index + 1)
+  return { ultraWide, main, tele }
 }
 
 /**
@@ -89,7 +97,7 @@ export function CameraCapture({
   /** Ditegakkan lagi di server; di sini hanya untuk menonaktifkan shutter. */
   canUpload: boolean
 }) {
-  const t = useT()
+  const { locale, t } = useI18n()
   const videoRef = useRef<HTMLVideoElement>(null)
   const streamRef = useRef<MediaStream | null>(null)
 
@@ -100,6 +108,16 @@ export function CameraCapture({
   const [devices, setDevices] = useState<MediaDeviceInfo[]>([])
   const [mirrored, setMirrored] = useState(false)
   const [activeFront, setActiveFront] = useState(false)
+  const [zoom, setZoom] = useState(1)
+  const pinchRef = useRef<{ distance: number; zoom: number } | null>(null)
+
+  // Zoom yang harus berlaku SETELAH stream berikutnya siap.
+  //
+  // Berpindah lensa memasang ulang stream, dan efeknya mengembalikan zoom ke 1.
+  // Tanpa penampung ini, preset yang butuh ganti lensa sekaligus zoom digital
+  // (2x pada perangkat tanpa telefoto) akan kehilangan zoom-nya begitu stream
+  // baru menyala.
+  const pendingZoomRef = useRef<number | null>(null)
   const [portrait, setPortrait] = useState(true)
   const [busy, setBusy] = useState(false)
   const [flashing, setFlashing] = useState(false)
@@ -161,6 +179,8 @@ export function CameraCapture({
         }
 
         streamRef.current = stream
+        setZoom(pendingZoomRef.current ?? 1)
+        pendingZoomRef.current = null
 
         // Arah kamera dibaca dari track yang benar-benar aktif, bukan dari
         // tebakan kita. Saat modul dipilih lewat deviceId, state facingMode
@@ -205,7 +225,7 @@ export function CameraCapture({
     window.setTimeout(() => setFlashing(false), 140)
 
     try {
-      const photo = await capturePhoto(video, style, { mirrored })
+      const photo = await capturePhoto(video, style, { mirrored, zoom })
 
       const body = new FormData()
       body.append('original', photo.original, 'original.jpg')
@@ -235,6 +255,34 @@ export function CameraCapture({
     }
   }
 
+  /**
+   * Jarak antara dua sentuhan. Dipakai membandingkan renggang jari sekarang
+   * dengan saat gerakan dimulai, sehingga zoom mengikuti rasio, bukan selisih
+   * mentah yang akan terasa berbeda di tiap ukuran layar.
+   */
+  function touchDistance(touches: React.TouchList): number {
+    const dx = touches[0].clientX - touches[1].clientX
+    const dy = touches[0].clientY - touches[1].clientY
+    return Math.hypot(dx, dy)
+  }
+
+  function handleTouchStart(touchEvent: React.TouchEvent) {
+    if (touchEvent.touches.length !== 2) return
+    pinchRef.current = { distance: touchDistance(touchEvent.touches), zoom }
+  }
+
+  function handleTouchMove(touchEvent: React.TouchEvent) {
+    const start = pinchRef.current
+    if (!start || touchEvent.touches.length !== 2) return
+
+    const ratio = touchDistance(touchEvent.touches) / start.distance
+    setZoom(Math.min(MAX_DIGITAL_ZOOM, Math.max(1, start.zoom * ratio)))
+  }
+
+  function handleTouchEnd(touchEvent: React.TouchEvent) {
+    if (touchEvent.touches.length < 2) pinchRef.current = null
+  }
+
   function flipCamera() {
     // Balik ke pemilihan berbasis facingMode; deviceId dilepas supaya tidak
     // mengunci kamera lama.
@@ -246,11 +294,44 @@ export function CameraCapture({
     deviceId ?? streamRef.current?.getVideoTracks()[0]?.getSettings().deviceId ?? null
 
   // Hanya modul di sisi yang sedang aktif. Berpindah depan/belakang sudah
-  // tugas tombol balik, jadi menaruh "Depan" di daftar ini cuma menduplikasi
-  // kontrol yang sudah ada. Efek sampingnya bagus: di kamera depan yang
-  // biasanya cuma satu, daftarnya hilang sendiri.
+  // tugas tombol balik di sebelahnya.
   const lenses = devices.filter((device) => isFrontLens(device) === activeFront)
-  const showLensPicker = lenses.length > 1
+  const { ultraWide, main, tele } = groupLenses(lenses)
+
+  /**
+   * Preset zoom, meniru kamera bawaan.
+   *
+   * 0,5x dan 2x memakai lensa fisik kalau perangkatnya punya, karena itu zoom
+   * optik yang tidak kehilangan detail. Kalau tidak punya, 2x jatuh ke zoom
+   * digital pada lensa utama; 0,5x tidak ditampilkan sama sekali karena tidak
+   * ada cara memperlebar sudut pandang secara digital.
+   */
+  const presets: { factor: number; deviceId: string | null; digital: number }[] = [
+    ...(ultraWide ? [{ factor: 0.5, deviceId: ultraWide.deviceId, digital: 1 }] : []),
+    { factor: 1, deviceId: main?.deviceId ?? null, digital: 1 },
+    tele
+      ? { factor: 2, deviceId: tele.deviceId, digital: 1 }
+      : { factor: 2, deviceId: main?.deviceId ?? null, digital: 2 },
+  ]
+
+  const activePresetIndex = presets.findIndex(
+    (preset) =>
+      (preset.deviceId ?? activeDeviceId) === activeDeviceId &&
+      Math.abs(preset.digital - zoom) < 0.05,
+  )
+
+  const zoomFormatter = new Intl.NumberFormat(locale, { maximumFractionDigits: 1 })
+
+  function applyPreset(preset: { deviceId: string | null; digital: number }) {
+    if (preset.deviceId && preset.deviceId !== activeDeviceId) {
+      pendingZoomRef.current = preset.digital
+      setDeviceId(preset.deviceId)
+      return
+    }
+    setZoom(preset.digital)
+  }
+
+  const showZoomBar = presets.length > 1 && state === 'ready'
 
   return (
     <div className="flex min-h-svh flex-col bg-black">
@@ -305,9 +386,14 @@ export function CameraCapture({
             className={cn(
               'size-full object-cover transition-opacity',
               state === 'ready' ? 'opacity-100' : 'opacity-0',
-              mirrored && '-scale-x-100',
             )}
-            style={{ filter: style.cssFilter }}
+            style={{
+              filter: style.cssFilter,
+              // Cermin dan zoom digabung dalam satu transform. Kalau cermin
+              // tetap lewat class -scale-x-100, transform di sini akan
+              // menimpanya dan kamera depan berhenti tercermin.
+              transform: `scale(${mirrored ? -zoom : zoom}, ${zoom})`,
+            }}
           />
 
           {/* Grain & vignette preview, pendekatan CSS dari efek yang nanti
@@ -323,6 +409,12 @@ export function CameraCapture({
               background: `radial-gradient(ellipse at center, transparent 45%, rgba(0,0,0,${style.vignetteStrength}) 100%)`,
             }}
           />
+
+          {state === 'ready' && zoom > 1.02 ? (
+            <span className="pointer-events-none absolute left-1/2 top-3 -translate-x-1/2 rounded-full bg-black/60 px-3 py-1 font-mono text-xs tabular-nums text-white">
+              {zoomFormatter.format(zoom)}×
+            </span>
+          ) : null}
 
           {flashing ? <div className="absolute inset-0 bg-white" /> : null}
 
@@ -359,28 +451,35 @@ export function CameraCapture({
       </div>
 
       <footer className="grid gap-4 px-6 pb-8 pt-5">
-        {showLensPicker ? (
+        {showZoomBar ? (
           <div
             role="group"
-            aria-label={t.camera.chooseCamera}
-            className="mx-auto flex max-w-full gap-1 overflow-x-auto rounded-full bg-white/10 p-1"
+            aria-label={t.camera.chooseZoom}
+            className="mx-auto flex items-center gap-1 rounded-full bg-black/50 p-1"
           >
-            {lenses.map((device, index) => {
-              const active = device.deviceId === activeDeviceId
+            {presets.map((preset, index) => {
+              const isActive = index === activePresetIndex
+              // Preset yang aktif menampilkan zoom sebenarnya, jadi saat dicubit
+              // angkanya ikut bergerak alih-alih diam di 1x sementara gambarnya
+              // jelas sudah membesar.
+              const label = isActive
+                ? zoomFormatter.format(zoom)
+                : zoomFormatter.format(preset.factor)
 
               return (
                 <button
-                  key={device.deviceId || index}
+                  key={preset.factor}
                   type="button"
-                  onClick={() => setDeviceId(device.deviceId)}
-                  disabled={state !== 'ready' || busy}
-                  aria-pressed={active}
+                  onClick={() => applyPreset(preset)}
+                  disabled={busy}
+                  aria-pressed={isActive}
                   className={cn(
-                    'shrink-0 rounded-full px-3.5 py-1.5 text-xs font-medium transition-colors disabled:opacity-40',
-                    active ? 'bg-white text-black' : 'text-white/70 hover:text-white',
+                    'min-w-11 rounded-full px-2 py-2 text-xs font-semibold tabular-nums transition-colors disabled:opacity-40',
+                    isActive ? 'bg-white/25 text-primary' : 'text-white/80 hover:text-white',
                   )}
                 >
-                  {lensLabel(device, index, t)}
+                  {label}
+                  {isActive ? '×' : ''}
                 </button>
               )
             })}

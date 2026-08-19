@@ -220,7 +220,7 @@ function makeThumbnail(source: HTMLCanvasElement): HTMLCanvasElement {
 export async function capturePhoto(
   video: HTMLVideoElement,
   style: FilmStyleDef,
-  { mirrored = false }: { mirrored?: boolean } = {},
+  { mirrored = false, zoom = 1 }: { mirrored?: boolean; zoom?: number } = {},
 ): Promise<CapturedPhoto> {
   const sourceWidth = video.videoWidth
   const sourceHeight = video.videoHeight
@@ -229,7 +229,23 @@ export async function capturePhoto(
     throw new Error('Kamera belum siap.')
   }
 
-  const { sx, sy, sw, sh } = cropRect(sourceWidth, sourceHeight)
+  const frameRect = cropRect(sourceWidth, sourceHeight)
+
+  // Zoom digital: ambil bagian tengah seluas 1/zoom dari bingkai.
+  //
+  // Angka yang sama dipakai preview lewat transform: scale(), jadi apa yang
+  // terpotong di layar sama persis dengan apa yang terpotong di file. Kalau
+  // salah satunya lupa dikalikan, tamu akan mendapat foto yang lebih lebar
+  // daripada yang dia bidik.
+  const safeZoom = Math.max(1, zoom)
+  const sw = frameRect.sw / safeZoom
+  const sh = frameRect.sh / safeZoom
+  const sx = frameRect.sx + (frameRect.sw - sw) / 2
+  const sy = frameRect.sy + (frameRect.sh - sh) / 2
+
+  // Tidak pernah memperbesar melebihi piksel yang benar-benar ada: pada zoom
+  // tinggi sumbernya memang lebih kecil, dan menaikkannya cuma menambah ukuran
+  // file tanpa menambah detail.
   const scale = Math.min(1, MAX_EDGE / Math.max(sw, sh))
   const width = Math.round(sw * scale)
   const height = Math.round(sh * scale)
