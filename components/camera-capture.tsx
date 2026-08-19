@@ -1,6 +1,6 @@
 'use client'
 
-import { RefreshCwIcon } from 'lucide-react'
+import { FlashlightIcon, FlashlightOffIcon, RefreshCwIcon } from 'lucide-react'
 import Link from 'next/link'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
@@ -20,6 +20,20 @@ import { cn } from '@/lib/utils'
  * gunanya. Zoom optik lewat pergantian lensa tidak terkena batas ini.
  */
 const MAX_DIGITAL_ZOOM = 5
+
+/**
+ * `torch` belum masuk tipe standar MediaTrackCapabilities maupun
+ * MediaTrackConstraintSet, jadi cast-nya dikurung di dua helper ini alih-alih
+ * disebar ke seluruh komponen.
+ */
+function trackSupportsTorch(track: MediaStreamTrack | undefined): boolean {
+  if (!track?.getCapabilities) return false
+  return (track.getCapabilities() as { torch?: boolean }).torch === true
+}
+
+function setTrackTorch(track: MediaStreamTrack, on: boolean): Promise<void> {
+  return track.applyConstraints({ advanced: [{ torch: on }] } as unknown as MediaTrackConstraints)
+}
 
 type CameraState = 'starting' | 'ready' | 'error'
 type FacingMode = 'environment' | 'user'
@@ -109,6 +123,8 @@ export function CameraCapture({
   const [mirrored, setMirrored] = useState(false)
   const [activeFront, setActiveFront] = useState(false)
   const [zoom, setZoom] = useState(1)
+  const [torchAvailable, setTorchAvailable] = useState(false)
+  const [torchOn, setTorchOn] = useState(false)
   const frameRef = useRef<HTMLDivElement>(null)
 
   // Zoom disimpan juga di ref supaya listener sentuh tidak perlu dipasang ulang
@@ -204,6 +220,12 @@ export function CameraCapture({
         streamRef.current = stream
         setZoom(pendingZoomRef.current ?? 1)
         pendingZoomRef.current = null
+
+        // Kemampuan lampu melekat pada track, bukan pada perangkat, jadi harus
+        // diperiksa ulang setiap ganti lensa. Statusnya juga direset karena
+        // track lama sudah mati bersama lampunya.
+        setTorchAvailable(trackSupportsTorch(stream.getVideoTracks()[0]))
+        setTorchOn(false)
 
         // Arah kamera dibaca dari track yang benar-benar aktif, bukan dari
         // tebakan kita. Saat modul dipilih lewat deviceId, state facingMode
@@ -336,6 +358,24 @@ export function CameraCapture({
       frame.removeEventListener('gesturechange', blockPageZoom)
     }
   }, [])
+
+  async function toggleTorch() {
+    const track = streamRef.current?.getVideoTracks()[0]
+    if (!track) return
+
+    const next = !torchOn
+    try {
+      await setTrackTorch(track, next)
+      setTorchOn(next)
+    } catch {
+      // Sebagian perangkat melaporkan torch sebagai kemampuan tapi menolak saat
+      // benar-benar diminta. Tombolnya disembunyikan supaya tamu tidak menekan
+      // sesuatu yang tidak akan pernah bekerja.
+      setTorchAvailable(false)
+      setTorchOn(false)
+      toast.error(t.camera.torchFailed)
+    }
+  }
 
   function flipCamera() {
     // Balik ke pemilihan berbasis facingMode; deviceId dilepas supaya tidak
@@ -597,8 +637,27 @@ export function CameraCapture({
             />
           </button>
 
-          {/* Penyeimbang lebar agar tombol shutter tetap di tengah. */}
-          <span className="size-10" aria-hidden />
+          {torchAvailable ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              aria-label={torchOn ? t.camera.torchOff : t.camera.torchOn}
+              aria-pressed={torchOn}
+              disabled={state !== 'ready' || busy}
+              onClick={toggleTorch}
+              className={cn(
+                'hover:bg-white/10',
+                torchOn ? 'text-primary hover:text-primary' : 'text-white hover:text-white',
+              )}
+            >
+              {torchOn ? <FlashlightIcon className="size-5" /> : <FlashlightOffIcon className="size-5" />}
+            </Button>
+          ) : (
+            /* Penyeimbang lebar agar tombol shutter tetap di tengah saat
+               perangkatnya tidak punya lampu yang bisa dikendalikan browser. */
+            <span className="size-10" aria-hidden />
+          )}
         </div>
 
         <p className="text-center text-xs leading-relaxed text-white/50">
