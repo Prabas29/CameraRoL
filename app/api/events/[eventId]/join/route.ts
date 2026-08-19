@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server'
 
+import { initialCanUpload } from '@/lib/access'
 import { getPublicEvent, isUuid } from '@/lib/events'
 import { guestCookieName, guestCookieOptions } from '@/lib/guest-session'
 import { getT } from '@/lib/i18n/server'
@@ -53,19 +54,57 @@ export async function POST(
   const admin = createAdminClient()
 
   // Satu device = satu tamu per event (unique constraint di event_id+device_id).
-  // Join ulang hanya memperbarui namanya, bukan membuat tamu baru, supaya foto
-  // lama tetap terkait ke orang yang sama.
-  const { data: guest, error } = await admin
+  //
+  // Sengaja TIDAK memakai upsert satu langkah. Upsert akan menulis ulang semua
+  // kolom yang disertakan, termasuk can_upload, sehingga tamu yang sudah
+  // diizinkan host akan kehilangan izinnya begitu ia membuka link lagi. Karena
+  // itu jalur "sudah ada" hanya menyentuh nama, dan can_upload cuma ditetapkan
+  // saat baris benar-benar baru dibuat.
+  const { data: existing } = await admin
     .from('guests')
-    .upsert(
-      { event_id: eventId, device_id: deviceId, name },
-      { onConflict: 'event_id,device_id' },
-    )
-    .select('id, name')
-    .single()
+    .select('id')
+    .eq('event_id', eventId)
+    .eq('device_id', deviceId)
+    .maybeSingle()
 
-  if (error || !guest) {
-    return NextResponse.json({ error: t.api.joinFailed }, { status: 500 })
+  let guest: { id: string; name: string } | null = null
+
+  if (existing) {
+    const { data, error } = await admin
+      .from('guests')
+      .update({ name })
+      .eq('id', existing.id)
+      .select('id, name')
+      .single()
+
+    if (error || !data) {
+      return NextResponse.json({ error: t.api.joinFailed }, { status: 500 })
+    }
+    guest = data
+  } else {
+    const newRow = { event_id: eventId, device_id: deviceId, name }
+
+    let { data, error } = await admin
+      .from('guests')
+      .insert({ ...newRow, can_upload: initialCanUpload(event) })
+      .select('id, name')
+      .single()
+
+    // Kolom belum ada, artinya migration 0003 belum dijalankan. Tamu tetap
+    // harus bisa bergabung, sekadar tanpa kendali hak unggah, supaya urutan
+    // deploy dan migration tidak saling mengunci.
+    if (error?.code === 'PGRST204' || error?.code === '42703') {
+      console.warn(
+        '[rol] Kolom can_upload belum ada. Jalankan supabase/migrations/0003_upload_access.sql ' +
+          'agar kendali hak unggah aktif.',
+      )
+      ;({ data, error } = await admin.from('guests').insert(newRow).select('id, name').single())
+    }
+
+    if (error || !data) {
+      return NextResponse.json({ error: t.api.joinFailed }, { status: 500 })
+    }
+    guest = data
   }
 
   const response = NextResponse.json({ guestId: guest.id, name: guest.name })

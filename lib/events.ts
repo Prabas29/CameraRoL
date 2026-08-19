@@ -12,7 +12,7 @@ export function isUuid(value: string): boolean {
 /** Bagian event yang boleh dilihat tamu. Sengaja tanpa `host_user_id`. */
 export type PublicEvent = Pick<
   EventRow,
-  'id' | 'name' | 'film_style' | 'reveal_mode' | 'reveal_at' | 'is_revealed'
+  'id' | 'name' | 'film_style' | 'reveal_mode' | 'reveal_at' | 'is_revealed' | 'upload_policy'
 >
 
 /**
@@ -29,9 +29,13 @@ export async function getPublicEvent(eventId: string): Promise<PublicEvent | nul
   }
 
   const admin = createAdminClient()
+  // `select('*')`, bukan daftar kolom: menyebut upload_policy secara eksplisit
+  // akan menggagalkan seluruh query kalau migration 0003 belum dijalankan.
+  // Kolom yang dikembalikan tetap disaring manual di bawah supaya host_user_id
+  // tidak ikut ke payload halaman tamu.
   const { data, error } = await admin
     .from('events')
-    .select('id, name, film_style, reveal_mode, reveal_at, is_revealed')
+    .select('*')
     .eq('id', eventId)
     .maybeSingle()
 
@@ -54,5 +58,13 @@ export async function getPublicEvent(eventId: string): Promise<PublicEvent | nul
     return null
   }
 
-  return data
+  return {
+    id: data.id,
+    name: data.name,
+    film_style: data.film_style,
+    reveal_mode: data.reveal_mode,
+    reveal_at: data.reveal_at,
+    is_revealed: data.is_revealed,
+    upload_policy: data.upload_policy ?? 'open',
+  }
 }

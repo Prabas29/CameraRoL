@@ -126,3 +126,71 @@ export async function signOut() {
   await supabase.auth.signOut()
   redirect('/login')
 }
+
+/**
+ * Mengubah aturan untuk tamu BARU.
+ *
+ * Sengaja tidak menyentuh tamu yang sudah ada. Beralih ke mode 'approval' di
+ * tengah acara seharusnya menyaring pendatang berikutnya, bukan tiba-tiba
+ * membungkam orang yang sedang memotret.
+ */
+export async function updateUploadPolicy(
+  eventId: string,
+  policy: string,
+): Promise<ActionResult> {
+  if (policy !== 'open' && policy !== 'approval') return { error: 'unknownMode' }
+
+  const supabase = await createClient()
+  const { error } = await supabase
+    .from('events')
+    .update({ upload_policy: policy })
+    .eq('id', eventId)
+
+  if (error) {
+    if (error.code === 'PGRST204' || error.code === '42703') return { error: 'migrationNeeded' }
+    return { error: 'createFailed' }
+  }
+
+  revalidatePath(`/dashboard/${eventId}`)
+  return { error: null }
+}
+
+/** Memberi atau mencabut hak unggah satu tamu. */
+export async function setGuestUpload(
+  eventId: string,
+  guestId: string,
+  canUpload: boolean,
+): Promise<ActionResult> {
+  const supabase = await createClient()
+
+  // `.eq('event_id', eventId)` bukan sekadar kehati-hatian: RLS pada tabel
+  // guests hanya mengizinkan SELECT untuk host, sementara UPDATE ini lewat
+  // sesi host juga. Menyertakan event_id memastikan host tidak bisa mengubah
+  // tamu di acara orang lain sekalipun guestId ditebak.
+  const { data, error } = await supabase
+    .from('guests')
+    .update({ can_upload: canUpload })
+    .eq('id', guestId)
+    .eq('event_id', eventId)
+    .select('id')
+
+  if (error) {
+    if (error.code === 'PGRST204' || error.code === '42703') return { error: 'migrationNeeded' }
+    return { error: 'createFailed' }
+  }
+
+  // Nol baris tanpa error berarti RLS menyaring barisnya lebih dulu, biasanya
+  // karena policy UPDATE di migration 0003 belum terpasang. Tanpa pemeriksaan
+  // ini, kegagalannya tampak seperti keberhasilan.
+  if (!data || data.length === 0) {
+    console.warn(
+      `[rol] setGuestUpload(${guestId}) tidak mengubah baris apa pun. ` +
+        'Kemungkinan policy host_updates_own_event_guests belum terpasang; ' +
+        'jalankan supabase/migrations/0003_upload_access.sql.',
+    )
+    return { error: 'migrationNeeded' }
+  }
+
+  revalidatePath(`/dashboard/${eventId}`)
+  return { error: null }
+}

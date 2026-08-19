@@ -9,6 +9,9 @@
 export type FilmStyle = 'vintage' | 'original' | 'bw'
 export type RevealMode = 'scheduled' | 'manual'
 
+/** Hak unggah untuk tamu BARU. Tamu lama tidak terpengaruh saat mode diubah. */
+export type UploadPolicy = 'open' | 'approval'
+
 /*
  * Catatan: baris-baris tabel di bawah sengaja memakai `type`, bukan `interface`.
  * postgrest-js membatasi bentuk skema dengan `Record<string, unknown>`, dan
@@ -25,6 +28,8 @@ export type EventRow = {
   /** null kalau reveal_mode === 'manual' */
   reveal_at: string | null
   is_revealed: boolean
+  /** opsional: belum ada sebelum migration 0003, anggap 'open' kalau tidak ada */
+  upload_policy?: UploadPolicy | null
   created_at: string
 }
 
@@ -33,7 +38,18 @@ export type GuestRow = {
   event_id: string
   device_id: string
   name: string
+  /** opsional: belum ada sebelum migration 0003, anggap true kalau tidak ada */
+  can_upload?: boolean | null
   joined_at: string
+}
+
+/** Bentuk tamu yang aman ditampilkan ke sesama tamu: tanpa device_id. */
+export interface GuestSummary {
+  id: string
+  name: string
+  joinedAt: string
+  canUpload: boolean
+  photoCount: number
 }
 
 export type PhotoRow = {

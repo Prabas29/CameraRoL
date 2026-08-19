@@ -80,11 +80,14 @@ export function CameraCapture({
   eventName,
   guestName,
   style,
+  canUpload,
 }: {
   eventId: string
   eventName: string
   guestName: string
   style: FilmStyleDef
+  /** Ditegakkan lagi di server; di sini hanya untuk menonaktifkan shutter. */
+  canUpload: boolean
 }) {
   const t = useT()
   const videoRef = useRef<HTMLVideoElement>(null)
@@ -195,7 +198,7 @@ export function CameraCapture({
 
   async function handleShutter() {
     const video = videoRef.current
-    if (!video || state !== 'ready' || busy) return
+    if (!video || state !== 'ready' || busy || !canUpload) return
 
     setBusy(true)
     setFlashing(true)
@@ -271,6 +274,14 @@ export function CameraCapture({
             className="text-white hover:bg-white/10 hover:text-white"
           >
             <Link href={`/e/${eventId}/gallery`}>{t.camera.album}</Link>
+          </Button>
+          <Button
+            asChild
+            size="sm"
+            variant="ghost"
+            className="text-white hover:bg-white/10 hover:text-white"
+          >
+            <Link href={`/e/${eventId}/guests`}>{t.guests.viewAll}</Link>
           </Button>
         </div>
       </header>
@@ -392,7 +403,7 @@ export function CameraCapture({
           <button
             type="button"
             onClick={handleShutter}
-            disabled={state !== 'ready' || busy}
+            disabled={state !== 'ready' || busy || !canUpload}
             aria-label={t.camera.shutter}
             className={cn(
               'size-20 rounded-full border-4 border-white/80 p-1.5 transition-transform',
@@ -412,7 +423,7 @@ export function CameraCapture({
         </div>
 
         <p className="text-center text-xs leading-relaxed text-white/50">
-          {busy ? t.camera.saving : t.camera.lockedNote}
+          {!canUpload ? t.camera.notAllowed : busy ? t.camera.saving : t.camera.lockedNote}
         </p>
       </footer>
     </div>

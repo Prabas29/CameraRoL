@@ -2,12 +2,15 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 
 import { EventControls } from '@/components/event-controls'
+import { GuestAccessManager } from '@/components/guest-access-manager'
 import { HostPhotoGrid } from '@/components/host-photo-grid'
 import { SharePanel } from '@/components/share-panel'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { uploadPolicyOf } from '@/lib/access'
 import { siteUrl } from '@/lib/env'
+import { getEventGuests } from '@/lib/guests'
 import { getI18n } from '@/lib/i18n/server'
 import { signPhotoUrls } from '@/lib/photos'
 import { isRevealed } from '@/lib/reveal'
@@ -74,6 +77,8 @@ export default async function EventDetailPage({ params, searchParams }: PageProp
     ]
   })
 
+  const guestSummaries = await getEventGuests(eventId)
+
   const joinUrl = `${siteUrl()}/e/${event.id}`
   const revealed = isRevealed(event)
 
@@ -110,6 +115,12 @@ export default async function EventDetailPage({ params, searchParams }: PageProp
       </div>
 
       <EventControls event={event} revealed={revealed} />
+
+      <GuestAccessManager
+        eventId={event.id}
+        guests={guestSummaries}
+        policy={uploadPolicyOf(event)}
+      />
 
       <Card>
         <CardHeader className="flex-row items-center justify-between gap-4 space-y-0">

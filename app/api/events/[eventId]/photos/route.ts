@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server'
 
+import { canGuestUpload } from '@/lib/access'
 import { STORAGE_BUCKET } from '@/lib/env'
 import { getPublicEvent, isUuid } from '@/lib/events'
 import { getGuest } from '@/lib/guest-session'
@@ -43,6 +44,14 @@ export async function POST(
   const guest = await getGuest(eventId)
   if (!guest) {
     return NextResponse.json({ error: t.api.notJoined }, { status: 401 })
+  }
+
+  // Gerbang sebenarnya untuk hak unggah. Tombol shutter yang dinonaktifkan di
+  // halaman kamera hanya menghemat percobaan yang pasti gagal; yang benar-benar
+  // menahan adalah pemeriksaan ini, karena request bisa dikirim langsung tanpa
+  // melewati antarmuka sama sekali.
+  if (!canGuestUpload(guest)) {
+    return NextResponse.json({ error: t.api.uploadNotAllowed }, { status: 403 })
   }
 
   let formData: FormData

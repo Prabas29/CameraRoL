@@ -1,6 +1,7 @@
 import { notFound, redirect } from 'next/navigation'
 
 import { CameraCapture } from '@/components/camera-capture'
+import { canGuestUpload } from '@/lib/access'
 import { getPublicEvent } from '@/lib/events'
 import { getFilmStyle } from '@/lib/film-styles'
 import { getGuest } from '@/lib/guest-session'
@@ -26,6 +27,7 @@ export default async function CameraPage({ params }: { params: Promise<{ eventId
       eventName={event.name}
       guestName={guest.name}
       style={getFilmStyle(event.film_style)}
+      canUpload={canGuestUpload(guest)}
     />
   )
 }
