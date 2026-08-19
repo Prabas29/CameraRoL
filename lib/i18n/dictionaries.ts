@@ -218,7 +218,19 @@ const id = {
     noGuests: 'Belum ada tamu yang bergabung.',
     policyUpdated: 'Aturan tamu baru diperbarui',
     guestUpdated: 'Hak unggah diperbarui',
-    migrationNeeded: 'Jalankan migration 0003 dulu supaya kendali ini aktif.',
+    migrationNeeded: 'Jalankan migration 0003 dan 0004 dulu supaya kendali ini aktif.',
+    remove: 'Keluarkan',
+    removeTitle: (name: string) => `Keluarkan ${name} dari acara?`,
+    removeDesc:
+      'Dia tidak bisa mengunggah lagi, namanya hilang dari daftar tamu, dan foto-fotonya disembunyikan dari album. Fotonya tidak dihapus permanen, jadi kalau ternyata salah orang semuanya bisa dikembalikan.',
+    removeConfirm: 'Ya, keluarkan',
+    removing: 'Mengeluarkan…',
+    removedToast: 'Tamu dikeluarkan',
+    removedSection: 'Sudah dikeluarkan',
+    removedSectionDesc:
+      'Foto mereka tersembunyi dari album. Mengembalikan tidak otomatis memberi izin memotret lagi.',
+    restore: 'Kembalikan',
+    restoredToast: 'Tamu dikembalikan',
   },
 
   camera: {
@@ -228,6 +240,9 @@ const id = {
     saving: 'Menyimpan foto…',
     lockedNote: 'Fotomu langsung terkunci. Belum ada yang bisa melihatnya, termasuk kamu.',
     notAllowed: 'Kamu belum diizinkan memotret di acara ini. Minta host membuka aksesmu.',
+    removedTitle: 'Kamu sudah tidak ada di acara ini',
+    removedBody:
+      'Host mengeluarkanmu dari acara ini, jadi kamu tidak bisa memotret lagi dan foto-fotomu tidak muncul di album. Kalau menurutmu ini keliru, hubungi yang mengundangmu.',
     switchCamera: 'Ganti kamera depan/belakang',
     chooseCamera: 'Pilih modul kamera',
     lensBack: 'Belakang',
@@ -534,7 +549,19 @@ const en = {
     noGuests: 'No guests have joined yet.',
     policyUpdated: 'New-guest rule updated',
     guestUpdated: 'Upload access updated',
-    migrationNeeded: 'Run migration 0003 first to activate this control.',
+    migrationNeeded: 'Run migrations 0003 and 0004 first to activate this control.',
+    remove: 'Remove',
+    removeTitle: (name: string) => `Remove ${name} from the event?`,
+    removeDesc:
+      'They can no longer upload, their name disappears from the guest list, and their photos are hidden from the album. Nothing is permanently deleted, so if you got the wrong person it can all be undone.',
+    removeConfirm: 'Yes, remove',
+    removing: 'Removing…',
+    removedToast: 'Guest removed',
+    removedSection: 'Removed',
+    removedSectionDesc:
+      'Their photos are hidden from the album. Restoring does not automatically grant shooting access again.',
+    restore: 'Restore',
+    restoredToast: 'Guest restored',
   },
 
   camera: {
@@ -544,6 +571,9 @@ const en = {
     saving: 'Saving photo…',
     lockedNote: 'Your photo is locked instantly. Nobody can see it yet, not even you.',
     notAllowed: 'You are not allowed to shoot at this event yet. Ask the host to grant you access.',
+    removedTitle: 'You are no longer in this event',
+    removedBody:
+      'The host removed you from this event, so you can no longer shoot and your photos no longer appear in the album. If you think this is a mistake, get in touch with whoever invited you.',
     switchCamera: 'Switch front/back camera',
     chooseCamera: 'Choose camera module',
     lensBack: 'Back',

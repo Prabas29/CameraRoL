@@ -1,6 +1,6 @@
 import 'server-only'
 
-import { canGuestUpload } from '@/lib/access'
+import { canGuestUpload, isGuestRemoved } from '@/lib/access'
 import { isUuid } from '@/lib/events'
 import { createAdminClient } from '@/lib/supabase/admin'
 import type { GuestSummary } from '@/types/database'
@@ -40,6 +40,7 @@ export async function getEventGuests(eventId: string): Promise<GuestSummary[]> {
     name: guest.name,
     joinedAt: guest.joined_at,
     canUpload: canGuestUpload(guest),
+    removed: isGuestRemoved(guest),
     photoCount: photoCounts.get(guest.id) ?? 0,
   }))
 }

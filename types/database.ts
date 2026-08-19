@@ -40,6 +40,8 @@ export type GuestRow = {
   name: string
   /** opsional: belum ada sebelum migration 0003, anggap true kalau tidak ada */
   can_upload?: boolean | null
+  /** terisi kalau host mengeluarkan tamu ini. null = aktif */
+  removed_at?: string | null
   joined_at: string
 }
 
@@ -49,6 +51,7 @@ export interface GuestSummary {
   name: string
   joinedAt: string
   canUpload: boolean
+  removed: boolean
   photoCount: number
 }
 
@@ -64,6 +67,8 @@ export type PhotoRow = {
   thumb_storage_path?: string | null
   film_style_applied: FilmStyle
   is_deleted: boolean
+  /** true hanya untuk foto yang tersembunyi karena tamunya dikeluarkan */
+  hidden_by_removal?: boolean | null
   created_at: string
 }
 

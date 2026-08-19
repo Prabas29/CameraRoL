@@ -4,6 +4,7 @@ import { notFound, redirect } from 'next/navigation'
 import { LanguageSwitcher } from '@/components/language-switcher'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { isGuestRemoved } from '@/lib/access'
 import { getPublicEvent } from '@/lib/events'
 import { getGuest } from '@/lib/guest-session'
 import { getEventGuests } from '@/lib/guests'
@@ -28,8 +29,11 @@ export default async function GuestsPage({ params }: { params: Promise<{ eventId
   // menebak URL.
   const me = await getGuest(eventId)
   if (!me) redirect(`/e/${eventId}`)
+  if (isGuestRemoved(me)) redirect(`/e/${eventId}/camera`)
 
-  const guests = await getEventGuests(eventId)
+  // Tamu yang dikeluarkan tidak ditampilkan ke sesama tamu. Host tetap
+  // melihatnya di dashboard, karena dia yang perlu bisa membatalkan.
+  const guests = (await getEventGuests(eventId)).filter((guest) => !guest.removed)
 
   return (
     <main className="mx-auto grid max-w-lg gap-6 px-5 py-8">

@@ -194,3 +194,83 @@ export async function setGuestUpload(
   revalidatePath(`/dashboard/${eventId}`)
   return { error: null }
 }
+
+/**
+ * Mengeluarkan tamu yang tidak dikenal host.
+ *
+ * Dua langkah, dan urutannya penting: tandai tamunya dulu supaya unggahan yang
+ * sedang berjalan langsung tertolak, baru sembunyikan fotonya.
+ *
+ * Hanya foto yang MASIH terlihat yang ditandai `hidden_by_removal`. Foto yang
+ * sebelumnya sudah dihapus host satu per satu sengaja dilewati, supaya
+ * membatalkan pengeluaran nanti tidak menghidupkannya kembali.
+ */
+export async function removeGuest(eventId: string, guestId: string): Promise<ActionResult> {
+  const supabase = await createClient()
+
+  const { data, error } = await supabase
+    .from('guests')
+    .update({ removed_at: new Date().toISOString(), can_upload: false })
+    .eq('id', guestId)
+    .eq('event_id', eventId)
+    .select('id')
+
+  if (error) {
+    if (error.code === 'PGRST204' || error.code === '42703') return { error: 'migrationNeeded' }
+    return { error: 'createFailed' }
+  }
+  if (!data || data.length === 0) return { error: 'migrationNeeded' }
+
+  const { error: photoError } = await supabase
+    .from('photos')
+    .update({ is_deleted: true, hidden_by_removal: true })
+    .eq('guest_id', guestId)
+    .eq('event_id', eventId)
+    .eq('is_deleted', false)
+
+  if (photoError) {
+    console.error(`[rol] removeGuest(${guestId}): foto gagal disembunyikan:`, photoError.message)
+  }
+
+  revalidatePath(`/dashboard/${eventId}`)
+  return { error: null }
+}
+
+/**
+ * Membatalkan pengeluaran.
+ *
+ * Hak unggah TIDAK ikut dikembalikan. Mengembalikan orang ke daftar dan
+ * mengizinkannya memotret lagi adalah dua keputusan berbeda, dan yang kedua
+ * sebaiknya disengaja, bukan efek samping.
+ */
+export async function restoreGuest(eventId: string, guestId: string): Promise<ActionResult> {
+  const supabase = await createClient()
+
+  const { data, error } = await supabase
+    .from('guests')
+    .update({ removed_at: null })
+    .eq('id', guestId)
+    .eq('event_id', eventId)
+    .select('id')
+
+  if (error) {
+    if (error.code === 'PGRST204' || error.code === '42703') return { error: 'migrationNeeded' }
+    return { error: 'createFailed' }
+  }
+  if (!data || data.length === 0) return { error: 'migrationNeeded' }
+
+  // Hanya foto yang disembunyikan oleh pengeluaran ini.
+  const { error: photoError } = await supabase
+    .from('photos')
+    .update({ is_deleted: false, hidden_by_removal: false })
+    .eq('guest_id', guestId)
+    .eq('event_id', eventId)
+    .eq('hidden_by_removal', true)
+
+  if (photoError) {
+    console.error(`[rol] restoreGuest(${guestId}): foto gagal dipulihkan:`, photoError.message)
+  }
+
+  revalidatePath(`/dashboard/${eventId}`)
+  return { error: null }
+}
