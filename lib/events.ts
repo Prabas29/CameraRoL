@@ -58,6 +58,15 @@ export async function getPublicEvent(eventId: string): Promise<PublicEvent | nul
     return null
   }
 
+  // Acara yang diarsipkan diperlakukan seolah tidak ada bagi tamu.
+  //
+  // Disaring DI SINI, satu titik yang dilewati semua rute tamu, bukan dicek
+  // ulang di tiap halaman. Kalau pemeriksaannya disebar, cukup satu rute lupa
+  // dan album yang seharusnya tertutup masih bisa dibuka.
+  if (data.archived_at) {
+    return null
+  }
+
   return {
     id: data.id,
     name: data.name,

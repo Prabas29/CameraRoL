@@ -85,6 +85,8 @@ const id = {
     emptyBody:
       'Buat acara pertamamu, lalu bagikan QR-nya ke tamu. Foto mereka akan terkunci sampai waktu reveal.',
     manualReveal: 'Dibuka manual oleh host',
+    archivedSection: 'Arsip',
+    archivedSectionDesc: 'Album tertutup untuk tamu. Foto masih tersimpan utuh.',
     opensAt: (time: string) => `Terbuka ${time}`,
     revealed: 'Terbuka',
     locked: 'Terkunci',
@@ -171,6 +173,26 @@ const id = {
     openedToast: 'Foto sudah terbuka untuk semua tamu',
     deletedToast: 'Foto dihapus',
     photoBy: (name: string) => `Foto oleh ${name}`,
+    dangerTitle: 'Acara selesai',
+    dangerDesc:
+      'Mengarsipkan menutup album untuk semua tamu dan menyembunyikan acara ini dari daftarmu. Tidak ada yang dihapus, dan bisa dikembalikan kapan saja.',
+    archive: 'Arsipkan',
+    archiveTitle: 'Arsipkan acara ini?',
+    archiveDesc:
+      'Tamu langsung kehilangan akses ke album. Foto tetap tersimpan utuh dan kamu bisa mengembalikannya kapan saja dari bagian arsip.',
+    archiving: 'Mengarsipkan…',
+    archivedToast: 'Acara diarsipkan',
+    unarchive: 'Kembalikan',
+    unarchivedToast: 'Acara dikembalikan',
+    archivedNotice:
+      'Acara ini diarsipkan. Tamu tidak bisa membuka albumnya, tapi tidak ada yang dihapus.',
+    deleteEvent: 'Hapus permanen',
+    deleteEventTitle: 'Hapus acara ini selamanya?',
+    deleteEventDesc: (photos: number, guests: number) =>
+      `${photos} foto dari ${guests} tamu akan hilang permanen, beserta file aslinya di storage. Tindakan ini tidak bisa dibatalkan lewat aplikasi maupun database.`,
+    deleteEventPrompt: 'Ketik nama acaranya untuk mengonfirmasi',
+    deletingEvent: 'Menghapus…',
+    nameMismatch: 'Nama acara tidak cocok.',
   },
 
   join: {
@@ -413,6 +435,8 @@ const en = {
     emptyBody:
       'Create your first event, then share its QR with guests. Their photos stay locked until the reveal.',
     manualReveal: 'Opened manually by the host',
+    archivedSection: 'Archive',
+    archivedSectionDesc: 'The album is closed to guests. Photos are still stored intact.',
     opensAt: (time: string) => `Opens ${time}`,
     revealed: 'Open',
     locked: 'Locked',
@@ -498,6 +522,26 @@ const en = {
     openedToast: 'Photos are now open to every guest',
     deletedToast: 'Photo deleted',
     photoBy: (name: string) => `Photo by ${name}`,
+    dangerTitle: 'Event finished',
+    dangerDesc:
+      'Archiving closes the album for every guest and hides this event from your list. Nothing is deleted, and it can be brought back at any time.',
+    archive: 'Archive',
+    archiveTitle: 'Archive this event?',
+    archiveDesc:
+      'Guests lose access to the album straight away. The photos stay intact and you can restore the event from the archive whenever you like.',
+    archiving: 'Archiving…',
+    archivedToast: 'Event archived',
+    unarchive: 'Restore',
+    unarchivedToast: 'Event restored',
+    archivedNotice:
+      'This event is archived. Guests cannot open its album, but nothing has been deleted.',
+    deleteEvent: 'Delete permanently',
+    deleteEventTitle: 'Delete this event forever?',
+    deleteEventDesc: (photos: number, guests: number) =>
+      `${photos} photos from ${guests} guests will be gone for good, along with their original files in storage. This cannot be undone from the app or the database.`,
+    deleteEventPrompt: 'Type the event name to confirm',
+    deletingEvent: 'Deleting…',
+    nameMismatch: 'The event name does not match.',
   },
 
   join: {

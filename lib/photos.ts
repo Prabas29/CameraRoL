@@ -50,3 +50,39 @@ export async function signPhotoUrls(
 
   return result
 }
+
+/**
+ * Menghapus seluruh file milik sebuah acara dari storage.
+ *
+ * Dipanggil SEBELUM barisnya dihapus. Cascade di database tidak menyentuh
+ * storage sama sekali, jadi menghapus baris lebih dulu berarti kehilangan
+ * satu-satunya petunjuk file mana milik siapa, dan file itu akan memakan kuota
+ * selamanya tanpa bisa ditelusuri lagi.
+ *
+ * Yang didaftar adalah isi foldernya, bukan path yang diturunkan dari baris
+ * photos, supaya sisa unggahan yang gagal di tengah jalan ikut terbawa bersih.
+ */
+export async function removeEventFiles(eventId: string): Promise<number> {
+  const admin = createAdminClient()
+  const bucket = admin.storage.from(STORAGE_BUCKET)
+  const paths: string[] = []
+
+  for (const folder of ['original', 'filtered', 'thumb']) {
+    const { data, error } = await bucket.list(`${eventId}/${folder}`, { limit: 1000 })
+    if (error) {
+      console.error(`[rol] gagal mendaftar ${eventId}/${folder}:`, error.message)
+      continue
+    }
+    for (const file of data ?? []) paths.push(`${eventId}/${folder}/${file.name}`)
+  }
+
+  if (paths.length === 0) return 0
+
+  const { error } = await bucket.remove(paths)
+  if (error) {
+    console.error(`[rol] gagal menghapus file ${eventId}:`, error.message)
+    return 0
+  }
+
+  return paths.length
+}

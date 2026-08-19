@@ -30,6 +30,8 @@ export type EventRow = {
   is_revealed: boolean
   /** opsional: belum ada sebelum migration 0003, anggap 'open' kalau tidak ada */
   upload_policy?: UploadPolicy | null
+  /** terisi kalau host mengarsipkan acara. null = aktif */
+  archived_at?: string | null
   created_at: string
 }
 

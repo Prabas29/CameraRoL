@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 
 import { EventControls } from '@/components/event-controls'
+import { EventLifecycle } from '@/components/event-lifecycle'
 import { GuestAccessManager } from '@/components/guest-access-manager'
 import { HostPhotoGrid } from '@/components/host-photo-grid'
 import { SharePanel } from '@/components/share-panel'
@@ -135,6 +136,14 @@ export default async function EventDetailPage({ params, searchParams }: PageProp
           <HostPhotoGrid eventId={event.id} photos={photos} />
         </CardContent>
       </Card>
+
+      <EventLifecycle
+        eventId={event.id}
+        eventName={event.name}
+        archived={Boolean(event.archived_at)}
+        photoCount={photoList.length}
+        guestCount={guestList.length}
+      />
     </div>
   )
 }

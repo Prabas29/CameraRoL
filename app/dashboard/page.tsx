@@ -24,13 +24,18 @@ export default async function DashboardPage() {
     .select('*')
     .order('created_at', { ascending: false })
 
-  const eventList = (events ?? []) as EventRow[]
+  const allEvents = (events ?? []) as EventRow[]
+  const eventList = allEvents.filter((item) => !item.archived_at)
+  const archivedList = allEvents.filter((item) => item.archived_at)
 
-  const { data: stats } = eventList.length
+  // Statistik diambil untuk SEMUA acara, termasuk yang diarsipkan: kartu di
+  // bagian arsip juga menampilkan jumlah tamu dan foto, dan itu justru angka
+  // yang dibaca host sebelum memutuskan menghapus permanen.
+  const { data: stats } = allEvents.length
     ? await supabase
         .from('event_stats')
         .select('*')
-        .in('event_id', eventList.map((item) => item.id))
+        .in('event_id', allEvents.map((item) => item.id))
     : { data: [] as EventStatsRow[] }
 
   const statsByEvent = new Map<string, EventStatsRow>(
@@ -106,6 +111,33 @@ export default async function DashboardPage() {
           )
         })}
       </div>
+
+      {archivedList.length > 0 ? (
+        <div className="grid gap-4">
+          <div className="grid gap-1">
+            <h2 className="text-sm font-medium">{t.dashboard.archivedSection}</h2>
+            <p className="text-xs text-muted-foreground">{t.dashboard.archivedSectionDesc}</p>
+          </div>
+
+          {archivedList.map((item) => {
+            const stat = statsByEvent.get(item.id)
+
+            return (
+              <Link key={item.id} href={`/dashboard/${item.id}`} className="group">
+                <Card className="border-dashed bg-muted/40 shadow-none transition-colors group-hover:ring-primary/30">
+                  <CardHeader>
+                    <CardTitle className="text-base text-muted-foreground">{item.name}</CardTitle>
+                  </CardHeader>
+                  <CardContent className="flex flex-wrap gap-x-6 gap-y-1 text-sm text-muted-foreground">
+                    <span>{t.dashboard.guestCount(stat?.guest_count ?? 0)}</span>
+                    <span>{t.dashboard.photoCount(stat?.photo_count ?? 0)}</span>
+                  </CardContent>
+                </Card>
+              </Link>
+            )
+          })}
+        </div>
+      ) : null}
     </div>
   )
 }

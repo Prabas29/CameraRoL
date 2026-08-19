@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 
 import { isFilmStyle } from '@/lib/film-styles'
+import { removeEventFiles } from '@/lib/photos'
 import { createClient } from '@/lib/supabase/server'
 import type { RevealMode } from '@/types/database'
 
@@ -273,4 +274,88 @@ export async function restoreGuest(eventId: string, guestId: string): Promise<Ac
 
   revalidatePath(`/dashboard/${eventId}`)
   return { error: null }
+}
+
+/** Mengarsipkan acara: tamu kehilangan album, tidak ada yang dihapus. */
+export async function archiveEvent(eventId: string): Promise<ActionResult> {
+  const supabase = await createClient()
+
+  const { data, error } = await supabase
+    .from('events')
+    .update({ archived_at: new Date().toISOString() })
+    .eq('id', eventId)
+    .select('id')
+
+  if (error) {
+    if (error.code === 'PGRST204' || error.code === '42703') return { error: 'migrationNeeded' }
+    return { error: 'createFailed' }
+  }
+  if (!data || data.length === 0) return { error: 'createFailed' }
+
+  revalidatePath('/dashboard')
+  revalidatePath(`/dashboard/${eventId}`)
+  return { error: null }
+}
+
+/** Mengembalikan acara dari arsip. Album tamu terbuka lagi. */
+export async function unarchiveEvent(eventId: string): Promise<ActionResult> {
+  const supabase = await createClient()
+
+  const { data, error } = await supabase
+    .from('events')
+    .update({ archived_at: null })
+    .eq('id', eventId)
+    .select('id')
+
+  if (error) {
+    if (error.code === 'PGRST204' || error.code === '42703') return { error: 'migrationNeeded' }
+    return { error: 'createFailed' }
+  }
+  if (!data || data.length === 0) return { error: 'createFailed' }
+
+  revalidatePath('/dashboard')
+  revalidatePath(`/dashboard/${eventId}`)
+  return { error: null }
+}
+
+/**
+ * Menghapus acara beserta seluruh isinya, permanen.
+ *
+ * Urutannya menentukan dan tidak boleh dibalik:
+ *
+ *   1. Pastikan acara ini benar-benar milik host yang sedang login. Dipakai
+ *      client ber-sesi supaya RLS yang menjawabnya, bukan perbandingan manual
+ *      yang bisa terlewat.
+ *   2. Bersihkan file di storage. Cascade database tidak menyentuh storage, jadi
+ *      langkah ini harus terjadi SELAGI barisnya masih ada; setelah baris hilang,
+ *      tidak ada lagi yang tahu file itu milik acara mana.
+ *   3. Baru hapus barisnya. Guests dan photos ikut terhapus lewat cascade.
+ *
+ * Nama acara diminta sebagai konfirmasi karena ini satu-satunya tindakan di
+ * aplikasi ini yang benar-benar tidak bisa dibatalkan.
+ */
+export async function deleteEvent(eventId: string, confirmName: string): Promise<ActionResult> {
+  const supabase = await createClient()
+
+  const { data: event } = await supabase
+    .from('events')
+    .select('id, name')
+    .eq('id', eventId)
+    .maybeSingle()
+
+  if (!event) return { error: 'createFailed' }
+  if (confirmName.trim() !== event.name) return { error: 'nameMismatch' }
+
+  const removed = await removeEventFiles(eventId)
+
+  const { error } = await supabase.from('events').delete().eq('id', eventId)
+  if (error) {
+    console.error(`[rol] deleteEvent(${eventId}) gagal setelah ${removed} file dihapus:`, error.message)
+    return { error: 'createFailed' }
+  }
+
+  console.warn(`[rol] Acara ${eventId} dihapus permanen, ${removed} file dibersihkan dari storage.`)
+
+  revalidatePath('/dashboard')
+  redirect('/dashboard')
 }

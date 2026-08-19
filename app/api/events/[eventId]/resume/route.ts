@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server'
 
-import { isUuid } from '@/lib/events'
+import { getPublicEvent, isUuid } from '@/lib/events'
 import { guestCookieName, guestCookieOptions } from '@/lib/guest-session'
 import { createAdminClient } from '@/lib/supabase/admin'
 
@@ -41,6 +41,14 @@ export async function POST(
   const deviceId = typeof body.deviceId === 'string' ? body.deviceId : ''
   if (!isUuid(deviceId)) {
     return NextResponse.json({ found: false }, { status: 400 })
+  }
+
+  // getPublicEvent juga menyaring acara yang diarsipkan, jadi pemanggilan ini
+  // sekaligus menutup celah: tanpa itu, tamu lama masih bisa mendapat cookie
+  // untuk acara yang albumnya sudah ditutup.
+  const event = await getPublicEvent(eventId)
+  if (!event) {
+    return NextResponse.json({ found: false }, { status: 404 })
   }
 
   const admin = createAdminClient()
