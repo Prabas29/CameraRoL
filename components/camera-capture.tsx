@@ -109,7 +109,13 @@ export function CameraCapture({
   const [mirrored, setMirrored] = useState(false)
   const [activeFront, setActiveFront] = useState(false)
   const [zoom, setZoom] = useState(1)
-  const pinchRef = useRef<{ distance: number; zoom: number } | null>(null)
+  const frameRef = useRef<HTMLDivElement>(null)
+
+  // Zoom disimpan juga di ref supaya listener sentuh tidak perlu dipasang ulang
+  // setiap kali angkanya berubah. Memasang ulang di tengah cubitan akan
+  // memutus gerakannya.
+  const zoomRef = useRef(1)
+  zoomRef.current = zoom
 
   // Zoom yang harus berlaku SETELAH stream berikutnya siap.
   //
@@ -256,32 +262,63 @@ export function CameraCapture({
   }
 
   /**
-   * Jarak antara dua sentuhan. Dipakai membandingkan renggang jari sekarang
-   * dengan saat gerakan dimulai, sehingga zoom mengikuti rasio, bukan selisih
-   * mentah yang akan terasa berbeda di tiap ukuran layar.
+   * Pinch to zoom, dipasang sebagai listener native, bukan lewat prop onTouch*.
+   *
+   * Dua alasan. Pertama, React memasang touchmove sebagai listener PASIF,
+   * sehingga preventDefault di dalamnya diabaikan browser. Kedua, Safari iOS
+   * memicu zoom halaman lewat rangkaian gesture event yang terpisah sama sekali
+   * dari touch event; tanpa dicegah, mencubit akan memperbesar seluruh
+   * antarmuka alih-alih gambar kameranya.
    */
-  function touchDistance(touches: React.TouchList): number {
-    const dx = touches[0].clientX - touches[1].clientX
-    const dy = touches[0].clientY - touches[1].clientY
-    return Math.hypot(dx, dy)
-  }
+  useEffect(() => {
+    const frame = frameRef.current
+    if (!frame) return
 
-  function handleTouchStart(touchEvent: React.TouchEvent) {
-    if (touchEvent.touches.length !== 2) return
-    pinchRef.current = { distance: touchDistance(touchEvent.touches), zoom }
-  }
+    let pinch: { distance: number; zoom: number } | null = null
 
-  function handleTouchMove(touchEvent: React.TouchEvent) {
-    const start = pinchRef.current
-    if (!start || touchEvent.touches.length !== 2) return
+    // Rasio renggang jari, bukan selisih piksel, supaya terasa sama di layar
+    // besar maupun kecil.
+    const spread = (touches: TouchList) =>
+      Math.hypot(
+        touches[0].clientX - touches[1].clientX,
+        touches[0].clientY - touches[1].clientY,
+      )
 
-    const ratio = touchDistance(touchEvent.touches) / start.distance
-    setZoom(Math.min(MAX_DIGITAL_ZOOM, Math.max(1, start.zoom * ratio)))
-  }
+    const onStart = (event: TouchEvent) => {
+      if (event.touches.length !== 2) return
+      pinch = { distance: spread(event.touches), zoom: zoomRef.current }
+    }
 
-  function handleTouchEnd(touchEvent: React.TouchEvent) {
-    if (touchEvent.touches.length < 2) pinchRef.current = null
-  }
+    const onMove = (event: TouchEvent) => {
+      if (!pinch || event.touches.length !== 2) return
+      event.preventDefault()
+
+      const ratio = spread(event.touches) / pinch.distance
+      setZoom(Math.min(MAX_DIGITAL_ZOOM, Math.max(1, pinch.zoom * ratio)))
+    }
+
+    const onEnd = (event: TouchEvent) => {
+      if (event.touches.length < 2) pinch = null
+    }
+
+    const blockPageZoom = (event: Event) => event.preventDefault()
+
+    frame.addEventListener('touchstart', onStart, { passive: false })
+    frame.addEventListener('touchmove', onMove, { passive: false })
+    frame.addEventListener('touchend', onEnd)
+    frame.addEventListener('touchcancel', onEnd)
+    frame.addEventListener('gesturestart', blockPageZoom, { passive: false })
+    frame.addEventListener('gesturechange', blockPageZoom, { passive: false })
+
+    return () => {
+      frame.removeEventListener('touchstart', onStart)
+      frame.removeEventListener('touchmove', onMove)
+      frame.removeEventListener('touchend', onEnd)
+      frame.removeEventListener('touchcancel', onEnd)
+      frame.removeEventListener('gesturestart', blockPageZoom)
+      frame.removeEventListener('gesturechange', blockPageZoom)
+    }
+  }, [])
 
   function flipCamera() {
     // Balik ke pemilihan berbasis facingMode; deviceId dilepas supaya tidak
@@ -369,8 +406,11 @@ export function CameraCapture({
 
       <div className="flex flex-1 items-center justify-center px-4">
         <div
+          ref={frameRef}
+          // touch-none memberi tahu browser bahwa gerakan di area ini ditangani
+          // sendiri, sehingga tidak ditafsirkan sebagai gulir atau zoom halaman.
           className={cn(
-            'relative w-full max-w-md overflow-hidden rounded-2xl bg-neutral-900',
+            'relative w-full max-w-md touch-none overflow-hidden rounded-2xl bg-neutral-900',
             portrait ? 'aspect-[3/4]' : 'aspect-[4/3]',
           )}
         >
