@@ -2,19 +2,49 @@ import type { FilmStyle } from '@/types/database'
 
 export type { FilmStyle }
 
+/** Fungsi filter yang dipakai project ini. Semuanya bisa ditulis jadi matriks warna. */
+export type FilterFn = 'grayscale' | 'sepia' | 'saturate' | 'contrast' | 'brightness'
+
+export interface FilterOp {
+  fn: FilterFn
+  value: number
+}
+
 export interface FilmStyleDef {
   id: FilmStyle
   /**
-   * String filter yang dipakai apa adanya di DUA tempat:
-   *   1. CSS `filter` pada <video> untuk live preview
-   *   2. Canvas `ctx.filter` saat mem-"bake" foto sebelum upload
-   * Karena sintaksnya identik, preview dan hasil akhir tidak bisa melenceng.
+   * Sumber kebenaran look-nya, dalam bentuk data.
+   *
+   * Dulu yang jadi sumber adalah string CSS, dan proses bake mengandalkan
+   * `ctx.filter` untuk menerapkannya. Ternyata di sebagian browser, terutama
+   * Safari iOS, `ctx.filter` ADA sebagai properti tapi tidak berefek pada
+   * drawImage dari <video>. Akibatnya foto tersimpan tanpa filter sama sekali
+   * sementara preview-nya terlihat benar, dan kegagalannya senyap.
+   *
+   * Sekarang bake menghitung warnanya sendiri dari `ops`, sehingga hasilnya
+   * sama di semua browser. String CSS di bawah diturunkan dari `ops` yang sama,
+   * jadi preview dan hasil tetap tidak bisa melenceng.
    */
+  ops: FilterOp[]
+  /** Diturunkan dari `ops`. Dipakai CSS `filter` pada live preview. */
   cssFilter: string
   /** Opacity overlay grain, 0–1. 0 = tanpa grain. */
   grainOpacity: number
   /** Kepekatan vignette di sudut frame, 0–1. 0 = tanpa vignette. */
   vignetteStrength: number
+}
+
+function toCssFilter(ops: FilterOp[]): string {
+  return ops.map((op) => `${op.fn}(${op.value})`).join(' ')
+}
+
+function defineStyle(
+  id: FilmStyle,
+  ops: FilterOp[],
+  grainOpacity: number,
+  vignetteStrength: number,
+): FilmStyleDef {
+  return { id, ops, cssFilter: toCssFilter(ops), grainOpacity, vignetteStrength }
 }
 
 /**
@@ -23,24 +53,35 @@ export interface FilmStyleDef {
  * `cssFilter` dan angka grain/vignette sama di bahasa mana pun.
  */
 export const FILM_STYLES: Record<FilmStyle, FilmStyleDef> = {
-  vintage: {
-    id: 'vintage',
-    cssFilter: 'sepia(0.3) saturate(1.4) contrast(1.1) brightness(1.05)',
-    grainOpacity: 0.1,
-    vignetteStrength: 0.35,
-  },
-  original: {
-    id: 'original',
-    cssFilter: 'contrast(1.05) saturate(1.05)',
-    grainOpacity: 0.03,
-    vignetteStrength: 0.12,
-  },
-  bw: {
-    id: 'bw',
-    cssFilter: 'grayscale(1) contrast(1.2)',
-    grainOpacity: 0.13,
-    vignetteStrength: 0.3,
-  },
+  vintage: defineStyle(
+    'vintage',
+    [
+      { fn: 'sepia', value: 0.3 },
+      { fn: 'saturate', value: 1.4 },
+      { fn: 'contrast', value: 1.1 },
+      { fn: 'brightness', value: 1.05 },
+    ],
+    0.1,
+    0.35,
+  ),
+  original: defineStyle(
+    'original',
+    [
+      { fn: 'contrast', value: 1.05 },
+      { fn: 'saturate', value: 1.05 },
+    ],
+    0.03,
+    0.12,
+  ),
+  bw: defineStyle(
+    'bw',
+    [
+      { fn: 'grayscale', value: 1 },
+      { fn: 'contrast', value: 1.2 },
+    ],
+    0.13,
+    0.3,
+  ),
 }
 
 export const FILM_STYLE_LIST: FilmStyleDef[] = [

@@ -1,5 +1,6 @@
 'use client'
 
+import { applyColorMatrix, buildColorMatrix } from '@/lib/color-matrix'
 import type { FilmStyleDef } from '@/lib/film-styles'
 
 /**
@@ -212,8 +213,9 @@ function makeThumbnail(source: HTMLCanvasElement): HTMLCanvasElement {
 /**
  * Mengambil satu frame dari <video> dan menghasilkan dua file JPEG.
  *
- * Filter warnanya memakai `cssFilter` yang sama persis dengan live preview, jadi
- * hasil foto tidak bisa melenceng dari yang dilihat tamu di layar.
+ * Warna dihitung dari `style.ops`, sumber yang sama dengan yang menurunkan
+ * `cssFilter` untuk live preview, jadi hasil foto tidak bisa melenceng dari
+ * yang dilihat tamu di layar.
  */
 export async function capturePhoto(
   video: HTMLVideoElement,
@@ -254,14 +256,19 @@ export async function capturePhoto(
   filteredCanvas.height = height
   const filteredContext = filteredCanvas.getContext('2d')!
 
-  // Safari <17 belum mendukung ctx.filter. Kalau tidak ada, warnanya dilewat
-  // tapi grain & vignette tetap jalan supaya foto masih punya karakter.
-  // TODO: fallback color matrix per-piksel kalau ternyata masih banyak dipakai.
-  if (typeof filteredContext.filter === 'string') {
-    filteredContext.filter = style.cssFilter
-  }
   drawFrame(filteredContext)
-  filteredContext.filter = 'none'
+
+  // Warna dihitung sendiri, TIDAK lewat ctx.filter.
+  //
+  // ctx.filter tidak bisa dipercaya: di Safari iOS properti itu ada dan bisa
+  // di-assign tanpa error, tapi tidak berefek pada drawImage dari <video>.
+  // Hasilnya foto tersimpan tanpa filter sama sekali padahal live preview
+  // terlihat benar, dan tidak ada error yang memberi tahu. Matriks warna
+  // memberi hasil yang sama di semua browser.
+  const matrix = buildColorMatrix(style.ops)
+  const frame = filteredContext.getImageData(0, 0, width, height)
+  applyColorMatrix(frame.data, matrix)
+  filteredContext.putImageData(frame, 0, 0)
 
   drawGrain(filteredContext, width, height, style.grainOpacity)
   drawVignette(filteredContext, width, height, style.vignetteStrength)
